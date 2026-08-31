@@ -1,60 +1,410 @@
-import React from 'react';
+import CollapsibleSection from './CollapsibleSection';
+import React, { useState } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { Bookmark, BookOpen, Scale, CheckSquare, ShieldCheck, Info, AlertTriangle, HelpCircle, Target, Flame, Heart } from 'lucide-react';
 
-export default function QaCard({ q, isBookmarked, toggleBookmark }) {
+export default function QaCard({ q, isBookmarked, toggleBookmark, defaultOpen = false }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   return (
-    <div className="qa-card" id={`q-${q.id}`}>
-      <div className="qa-header">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <div className="q-num-badge">{q.questionNum}</div>
-          <div>
-            <div className="q-title-bn">{q.questionBn}</div>
+    <div className={`qa-card transition-all duration-300 ${isOpen ? 'shadow-xl ring-1 ring-amber-500/30' : 'hover:border-amber-500/40'}`} id={`q-${q.id}`}>
+      {/* Clickable Header for Accordion Expand/Collapse */}
+      <div
+        className="qa-header cursor-pointer select-none pb-2"
+        onClick={() => setIsOpen(!isOpen)}
+        // title={isOpen ? "উত্তরপত্র লুকান" : "পূর্ণাঙ্গ উত্তরপত্র দেখতে ক্লিক করুন"}
+      >
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', flex: 1 }}>
+          <div className="flex justify-between items-center gap-3">
+            <div className="flex items-center gap-3">
+              <div className="q-num-badge shrink-0">{q.questionNum}</div>
+              <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                ফিকহ প্রথম পত্র
+              </span>
+            </div>
+            {/* Right Actions: Bookmark + Accordion Arrow */}
+            <div className="flex items-center gap-2 shrink-0 ml-2" onClick={(e) => e.stopPropagation()}>
+              <button
+                className="btn-icon"
+                onClick={() => toggleBookmark(q.id)}
+                title={isBookmarked ? "সংরক্ষণ মুক্ত করুন" : "সংরক্ষণ করুন"}
+                style={{ color: isBookmarked ? 'var(--accent-gold)' : 'var(--text-muted)' }}
+              >
+                <Bookmark size={20} fill={isBookmarked ? 'var(--accent-gold)' : 'none'} />
+              </button>
+
+              <button
+                onClick={() => setIsOpen(!isOpen)}
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform duration-300 ${
+                  isOpen ? 'bg-amber-500 text-black rotate-180' : 'bg-slate-800 text-amber-400 hover:bg-slate-700'
+                }`}
+                title={isOpen ? "বন্ধ করুন" : "খুলুন"}
+              >
+                <ChevronDown size={18} />
+              </button>
+            </div>
           </div>
+
+          {q.questionAr && (
+            <div className="q-title q-title-ar text-right font-serif text-lg leading-relaxed">
+              {q.questionAr}
+            </div>
+          )}
+
+          {q.questionBn && (
+            <div className="q-title q-title-bn font-bold text-base leading-relaxed text-slate-100">
+              {q.questionBn}
+            </div>
+          )}
         </div>
-        <button
-          className="btn-icon"
-          onClick={() => toggleBookmark(q.id)}
-          title={isBookmarked ? "সংরক্ষণ মুক্ত করুন" : "সংরক্ষণ করুন"}
-          style={{ color: isBookmarked ? 'var(--accent-gold)' : 'var(--text-muted)' }}
-        >
-          <Bookmark size={20} fill={isBookmarked ? 'var(--accent-gold)' : 'none'} />
-        </button>
       </div>
 
-      {/* Arabic Question text */}
-      {q.questionAr && (
-        <div className="q-title-ar">
-          {q.questionAr}
-        </div>
-      )}
+      {/* Accordion Expandable Answer Body */}
+      {isOpen && (
+        <div className="pt-4 border-t border-slate-800/80 space-y-4 animate-in fade-in duration-300">
 
       {/* Meaning / Definition */}
       {q.meaning && (
-        <div className="section-block">
-          <div className="section-title">
-            <BookOpen size={18} />
-            <span>পরিচয় ও সংজ্ঞা (التاريخ والتعريف)</span>
-          </div>
+        <CollapsibleSection title="পরিচয় ও সংজ্ঞা (التاريخ والتعريف)" icon={BookOpen} borderColor="var(--accent-emerald)" defaultOpen={true}>
           {typeof q.meaning === 'string' ? (
             <p>{q.meaning}</p>
           ) : (
             <>
               {q.meaning.linguistic && <p><strong>আভিধানিক অর্থ:</strong> {q.meaning.linguistic}</p>}
-              {q.meaning.shari && <p style={{ marginTop: '0.4rem' }}><strong>শরয়ী সংজ্ঞা:</strong> {q.meaning.shari}</p>}
+              {q.meaning.shari && <p style={{ marginTop: '0.4rem' }}><strong>শরয়ী সংজ্ঞা: </strong> {q.meaning.author}  {q.meaning.shari}</p>}
+              {q.meaning.author && <p><strong></strong></p>}
               {q.meaning.wali && <p style={{ marginTop: '0.4rem' }}><strong>ওলী (الولي)-র পরিচয়:</strong> {q.meaning.wali}</p>}
               {q.meaning.kufu && <p style={{ marginTop: '0.4rem' }}><strong>কুফু (الكفو)-র পরিচয়:</strong> {q.meaning.kufu}</p>}
             </>
           )}
-        </div>
+        </CollapsibleSection>
+      )}
+
+      {/* Kufu Ruling */}
+      {q.kufuRuling && (
+        <CollapsibleSection title="বিবাহে কুফু (الكفو) এর শরয়ী হুকুম" icon={Scale} borderColor="var(--accent-cyan)" defaultOpen={true}>
+          <p style={{ marginTop: '0.4rem' }}>{q.kufuRuling}</p>
+        </CollapsibleSection>
+      )}
+
+      {/* Forced Marriage Opinions */}
+      {q.forcedMarriageOpinions && (
+        <CollapsibleSection title="অপ্রাপ্ত ও প্রাপ্তবয়স্ক নারীর বিবাহে ওলীর জবরদস্তির বিধান (৪ প্রকার)" icon={ShieldCheck} borderColor="var(--accent-ruby)" defaultOpen={true}>
+          <div className="comparison-grid">
+            {q.forcedMarriageOpinions.map((fm, idx) => (
+              <div className="scholar-card" key={idx}>
+                <div className="scholar-name">{fm.group}</div>
+                <div className="scholar-verdict" style={{ marginTop: '0.4rem' }}>{fm.ruling}</div>
+              </div>
+            ))}
+          </div>
+        </CollapsibleSection>
+      )}
+
+      
+      {/* Nikah Question 4 blocks */}
+      {q.nikahRulingsDetailed && (
+        <CollapsibleSection title="বিবাহের হুকুম (حكم النكاح) ও ইমামগণের মতভেদ" icon={Scale} borderColor="var(--accent-gold)" defaultOpen={true}>
+          <div className="comparison-grid" style={{ marginTop: '0.4rem' }}>
+            {q.nikahRulingsDetailed.map((r, idx) => (
+              <div className="scholar-card" key={idx}>
+                <div className="scholar-name">{r.scholar}: <span style={{color: 'var(--accent-ruby)'}}>{r.verdict}</span></div>
+                <div className="scholar-verdict">{r.detail}</div>
+              </div>
+            ))}
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {q.nikahConditionsDetailed && (
+        <CollapsibleSection title="বিবাহের শর্তাবলি (شروط النكاح)" icon={CheckSquare} borderColor="var(--accent-emerald)" defaultOpen={true}>
+          <div style={{ marginTop: '0.5rem' }}>
+            <strong>১. الشرط العام (সাধারণ শর্ত):</strong>
+            <ul className="bullet-list" style={{ marginTop: '0.2rem', marginBottom: '1rem' }}>
+              {q.nikahConditionsDetailed.general.map((cond, idx) => <li key={idx}>{cond}</li>)}
+            </ul>
+            <strong>২. الشرط الخاص (বিশেষ শর্ত):</strong>
+            <ul className="bullet-list" style={{ marginTop: '0.2rem', marginBottom: '1rem' }}>
+              <li>ক. সাক্ষীদ্বয়ের উপস্থিত থাকা। (ইমামদের মতভেদ নিচে)</li>
+              {q.nikahConditionsDetailed.special.map((cond, idx) => <li key={idx}>{cond}</li>)}
+            </ul>
+            <strong>সাক্ষীর গুণ ও বৈশিষ্ট্য সম্পর্কে ইমামগণের মতভেদ:</strong>
+            <div className="comparison-grid" style={{ marginTop: '0.4rem' }}>
+              {q.nikahConditionsDetailed.witnessOpinions.map((w, idx) => (
+                <div className="scholar-card" key={idx}>
+                  <div className="scholar-name">{w.scholar}</div>
+                  <div className="scholar-verdict">{w.detail}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {q.nikahIllatDetailed && (
+        <CollapsibleSection title="বিবাহের ইল্লত বা কারণ (علل النكاح)" icon={HelpCircle} borderColor="var(--accent-cyan)" defaultOpen={true}>
+          <div className="comparison-grid" style={{ marginTop: '0.4rem' }}>
+            {q.nikahIllatDetailed.map((i, idx) => (
+              <div className="scholar-card" key={idx}>
+                <div className="scholar-name">{i.name}</div>
+                <div className="scholar-verdict">{i.desc}</div>
+              </div>
+            ))}
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {q.nikahPillarsDetailed && (
+        <CollapsibleSection title="বিবাহের রোকন (أركان النكاح)" icon={Target} borderColor="var(--accent-gold)" defaultOpen={true}>
+          <div className="comparison-grid" style={{ marginTop: '0.4rem' }}>
+            {q.nikahPillarsDetailed.map((p, idx) => (
+              <div className="scholar-card" key={idx}>
+                <div className="scholar-name">{p.name}</div>
+                <div className="scholar-verdict">{p.desc}</div>
+              </div>
+            ))}
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {q.nikahVsBayTwentyFourDetailed && (
+        <CollapsibleSection title="নিকাহ ও বাই' (ক্রয়-বিক্রয়)-এর মাঝে পার্থক্য" icon={AlertTriangle} borderColor="var(--accent-ruby)" defaultOpen={true}>
+          <div className="table-responsive" style={{ marginTop: '0.5rem' }}>
+            <table className="comparison-table">
+              <thead>
+                <tr>
+                  <th>ক্রমিক</th>
+                  <th>পার্থক্যের বিষয়</th>
+                  <th>نِكَاح (বিবাহ)</th>
+                  <th>بَيْع (ক্রয়-বিক্রয়)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {q.nikahVsBayTwentyFourDetailed.map((diff, idx) => (
+                  <tr key={idx}>
+                    <td style={{ textAlign: 'center' }}>{diff.num}</td>
+                    <td style={{ fontWeight: 'bold' }}>{diff.aspect}</td>
+                    <td>{diff.nikah}</td>
+                    <td>{diff.bay}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {q.validPhrasesDetailed && (
+        <CollapsibleSection title="যে যে শব্দ দ্বারা নিকাশ বিশুদ্ধ হয় (অلفاظ يصح بها النكاح)" icon={CheckSquare} borderColor="var(--accent-emerald)" defaultOpen={true}>
+          <div style={{ marginTop: '0.5rem' }}>
+            <p style={{ marginBottom: '0.5rem' }}><strong>১. {q.validPhrasesDetailed.consensus}</strong></p>
+            <p><strong>২. মতভেদপূর্ণ শব্দাবলি:</strong></p>
+            <div className="comparison-grid" style={{ marginTop: '0.4rem', marginBottom: '0.4rem' }}>
+              <div className="scholar-card">
+                <div className="scholar-verdict">{q.validPhrasesDetailed.hanafi}</div>
+              </div>
+              <div className="scholar-card">
+                <div className="scholar-verdict">{q.validPhrasesDetailed.shafi}</div>
+                <div className="scholar-verdict" style={{ marginTop: '0.5rem', color: 'var(--accent-gold)' }}>{q.validPhrasesDetailed.ahnafReply}</div>
+              </div>
+            </div>
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {q.invalidPhrasesDetailed && (
+        <CollapsibleSection title="যে শব্দ দ্বারা নিকাশ বিশুদ্ধ হয় না (অلفاظ لا يصح بها النكاح)" icon={AlertTriangle} borderColor="var(--accent-ruby)" defaultOpen={true}>
+          <p style={{ marginTop: '0.4rem' }}>{q.invalidPhrasesDetailed}</p>
+        </CollapsibleSection>
+      )}
+
+
+      {/* Nikah Question 4 blocks */}
+      {q.nikahRulingsDetailed && (
+        <CollapsibleSection title="বিবাহের হুকুম (حكم النكاح) ও ইমামগণের মতভেদ" icon={Scale} borderColor="var(--accent-gold)" defaultOpen={true}>
+          <div className="comparison-grid" style={{ marginTop: '0.4rem' }}>
+            {q.nikahRulingsDetailed.map((r, idx) => (
+              <div className="scholar-card" key={idx}>
+                <div className="scholar-name">{r.scholar}: <span style={{color: 'var(--accent-ruby)'}}>{r.verdict}</span></div>
+                <div className="scholar-verdict">{r.detail}</div>
+              </div>
+            ))}
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {q.nikahConditionsDetailed && (
+        <CollapsibleSection title="বিবাহের শর্তাবলি (شروط النكاح)" icon={CheckSquare} borderColor="var(--accent-emerald)" defaultOpen={true}>
+          <div style={{ marginTop: '0.5rem' }}>
+            <strong>১. الشرط العام (সাধারণ শর্ত):</strong>
+            <ul className="bullet-list" style={{ marginTop: '0.2rem', marginBottom: '1rem' }}>
+              {q.nikahConditionsDetailed.general.map((cond, idx) => <li key={idx}>{cond}</li>)}
+            </ul>
+            <strong>২. الشرط الخاص (বিশেষ শর্ত):</strong>
+            <ul className="bullet-list" style={{ marginTop: '0.2rem', marginBottom: '1rem' }}>
+              <li>ক. সাক্ষীদ্বয়ের উপস্থিত থাকা। (ইমামদের মতভেদ নিচে)</li>
+              {q.nikahConditionsDetailed.special.map((cond, idx) => <li key={idx}>{cond}</li>)}
+            </ul>
+            <strong>সাক্ষীর গুণ ও বৈশিষ্ট্য সম্পর্কে ইমামগণের মতভেদ:</strong>
+            <div className="comparison-grid" style={{ marginTop: '0.4rem' }}>
+              {q.nikahConditionsDetailed.witnessOpinions.map((w, idx) => (
+                <div className="scholar-card" key={idx}>
+                  <div className="scholar-name">{w.scholar}</div>
+                  <div className="scholar-verdict">{w.detail}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {q.nikahIllatDetailed && (
+        <CollapsibleSection title="বিবাহের ইল্লত বা কারণ (علل النكاح)" icon={HelpCircle} borderColor="var(--accent-cyan)" defaultOpen={true}>
+          <div className="comparison-grid" style={{ marginTop: '0.4rem' }}>
+            {q.nikahIllatDetailed.map((i, idx) => (
+              <div className="scholar-card" key={idx}>
+                <div className="scholar-name">{i.name}</div>
+                <div className="scholar-verdict">{i.desc}</div>
+              </div>
+            ))}
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {q.nikahPillarsDetailed && (
+        <CollapsibleSection title="বিবাহের রোকন (أركان النكاح)" icon={Target} borderColor="var(--accent-gold)" defaultOpen={true}>
+          <div className="comparison-grid" style={{ marginTop: '0.4rem' }}>
+            {q.nikahPillarsDetailed.map((p, idx) => (
+              <div className="scholar-card" key={idx}>
+                <div className="scholar-name">{p.name}</div>
+                <div className="scholar-verdict">{p.desc}</div>
+              </div>
+            ))}
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {q.nikahVsBayTwentyFourDetailed && (
+        <CollapsibleSection title="নিকাহ ও বাই' (ক্রয়-বিক্রয়)-এর মাঝে পার্থক্য" icon={AlertTriangle} borderColor="var(--accent-ruby)" defaultOpen={true}>
+          <div className="table-responsive" style={{ marginTop: '0.5rem' }}>
+            <table className="comparison-table">
+              <thead>
+                <tr>
+                  <th>ক্রমিক</th>
+                  <th>পার্থক্যের বিষয়</th>
+                  <th>نِكَاح (বিবাহ)</th>
+                  <th>بَيْع (ক্রয়-বিক্রয়)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {q.nikahVsBayTwentyFourDetailed.map((diff, idx) => (
+                  <tr key={idx}>
+                    <td style={{ textAlign: 'center' }}>{diff.num}</td>
+                    <td style={{ fontWeight: 'bold' }}>{diff.aspect}</td>
+                    <td>{diff.nikah}</td>
+                    <td>{diff.bay}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {q.validPhrasesDetailed && (
+        <CollapsibleSection title="যে যে শব্দ দ্বারা নিকাশ বিশুদ্ধ হয় (অلفاظ يصح بها النكاح)" icon={CheckSquare} borderColor="var(--accent-emerald)" defaultOpen={true}>
+          <div style={{ marginTop: '0.5rem' }}>
+            <p style={{ marginBottom: '0.5rem' }}><strong>১. {q.validPhrasesDetailed.consensus}</strong></p>
+            <p><strong>২. মতভেদপূর্ণ শব্দাবলি:</strong></p>
+            <div className="comparison-grid" style={{ marginTop: '0.4rem', marginBottom: '0.4rem' }}>
+              <div className="scholar-card">
+                <div className="scholar-verdict">{q.validPhrasesDetailed.hanafi}</div>
+              </div>
+              <div className="scholar-card">
+                <div className="scholar-verdict">{q.validPhrasesDetailed.shafi}</div>
+                <div className="scholar-verdict" style={{ marginTop: '0.5rem', color: 'var(--accent-gold)' }}>{q.validPhrasesDetailed.ahnafReply}</div>
+              </div>
+            </div>
+          </div>
+        </CollapsibleSection>
+      )}
+
+      {q.invalidPhrasesDetailed && (
+        <CollapsibleSection title="যে শব্দ দ্বারা নিকাশ বিশুদ্ধ হয় না (অلفاظ لا يصح بها النكاح)" icon={AlertTriangle} borderColor="var(--accent-ruby)" defaultOpen={true}>
+          <p style={{ marginTop: '0.4rem' }}>{q.invalidPhrasesDetailed}</p>
+        </CollapsibleSection>
+      )}
+
+{/* Talaq Categories */}
+      {q.talaqCategories && (
+        <CollapsibleSection title="তালাকের প্রকারভেদ (أنواع الطلاق)" icon={BookOpen} borderColor="var(--accent-cyan)" defaultOpen={true}>
+
+          {q.talaqCategories.byAttribute && (
+            <div style={{ marginBottom: '1rem' }}>
+              <strong style={{ color: 'var(--accent-emerald)' }}>ক. সিফাত বা গুণের দিক থেকে (৩ প্রকার):</strong>
+              <div className="comparison-grid" style={{ marginTop: '0.4rem' }}>
+                {q.talaqCategories.byAttribute.map((type, idx) => (
+                  <div className="scholar-card" key={idx}>
+                    <div className="scholar-name">{type.name}</div>
+                    <div className="scholar-verdict">{type.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {q.talaqCategories.byRuling && (
+            <div style={{ marginBottom: '1rem' }}>
+              <strong style={{ color: 'var(--accent-gold)' }}>খ. হুকুম বা বিধানের দিক থেকে (৩ প্রকার):</strong>
+              <div className="comparison-grid" style={{ marginTop: '0.4rem' }}>
+                {q.talaqCategories.byRuling.map((type, idx) => (
+                  <div className="scholar-card" key={idx}>
+                    <div className="scholar-name">{type.name}</div>
+                    <div className="scholar-verdict">{type.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {q.talaqCategories.byWords && (
+            <div>
+              <strong style={{ color: 'var(--accent-ruby)' }}>গ. শব্দ প্রয়োগের দিক থেকে (২ প্রকার):</strong>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.4rem' }}>
+                {q.talaqCategories.byWords.map((type, idx) => (
+                  <div className="scholar-card" key={idx} style={{ borderLeft: idx === 0 ? '3px solid var(--accent-emerald)' : '3px solid var(--accent-gold)' }}>
+                    <div className="scholar-name" style={{ fontSize: '1.05rem', color: idx === 0 ? 'var(--accent-emerald)' : 'var(--accent-gold)' }}>
+                      {idx + 1}. {type.category}
+                    </div>
+                    <p style={{ marginTop: '0.3rem', marginBottom: '0.5rem' }}><strong>সংজ্ঞা:</strong> {type.definition}</p>
+                    
+                    {type.wordsAndRulings && (
+                      <div className="comparison-grid">
+                        {type.wordsAndRulings.map((wr, wIdx) => (
+                          <div key={wIdx} style={{ background: 'var(--bg-secondary)', padding: '0.5rem', borderRadius: '4px' }}>
+                            <div style={{ fontWeight: 'bold', color: 'var(--text-main)', marginBottom: '0.2rem' }}>{wr.scholar || wr.category}:</div>
+                            <div style={{ fontSize: '0.9rem', marginBottom: '0.3rem' }}><strong>শব্দ:</strong> {wr.words}</div>
+                            <div style={{ fontSize: '0.9rem', color: 'var(--accent-gold)' }}><strong>বিধান:</strong> {wr.ruling}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {type.specialRule && (
+                      <div style={{ marginTop: '0.5rem', background: 'rgba(212, 175, 55, 0.1)', padding: '0.4rem', borderRadius: '4px', borderLeft: '2px solid var(--accent-ruby)', fontSize: '0.9rem' }}>
+                        {type.specialRule}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </CollapsibleSection>
       )}
 
       {/* Zihar Rulings Detailed */}
       {q.ziharRulingsDetailed && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-ruby)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-ruby)' }}>
-            <Scale size={18} />
-            <span>যিহার (الظهار)-এর শরয়ী বিধান (ফকীহগণের ৪টি অভিমত)</span>
-          </div>
+        <CollapsibleSection title="যিহার (الظهار)-এর শরয়ী বিধান (ফকীহগণের ৪টি অভিমত)" icon={Scale} borderColor="var(--accent-ruby)" defaultOpen={true}>
           <div className="comparison-grid">
             {q.ziharRulingsDetailed.map((zr, idx) => (
               <div className="scholar-card" key={idx}>
@@ -63,16 +413,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </div>
             ))}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Zihar Establishment Methods & Conditions */}
       {q.ziharEstablishmentMethods && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-cyan)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-cyan)' }}>
-            <CheckSquare size={18} />
-            <span>যিহার সাব্যস্ত হওয়ার ৩ শর্তাবলী ও ১১টি শরয়ী পদ্ধতি</span>
-          </div>
+        <CollapsibleSection title="যিহার সাব্যস্ত হওয়ার ৩ শর্তাবলী ও ১১টি শরয়ী পদ্ধতি" icon={CheckSquare} borderColor="var(--accent-cyan)" defaultOpen={true}>
           <strong>১. যিহার সাব্যস্ত হওয়ার ৩ শর্তাবলী:</strong>
           <ul className="bullet-list" style={{ marginTop: '0.3rem', marginBottom: '0.6rem' }}>
             {q.ziharEstablishmentMethods.conditions.map((c, idx) => (
@@ -85,16 +431,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               <li key={idx}>{m}</li>
             ))}
           </ul>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Kaffarah Detailed */}
       {q.kaffarahDetailed && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-gold)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-gold)' }}>
-            <ShieldCheck size={18} />
-            <span>যিহারের কাফফারা (كفارة الظهار) - কুরআন, হাদীস ও ফুকাহাদের মতভেদ</span>
-          </div>
+        <CollapsibleSection title="যিহারের কাফফারা (كفارة الظهار) - কুরআন, হাদীস ও ফুকাহাদের মতভেদ" icon={ShieldCheck} borderColor="var(--accent-gold)" defaultOpen={true}>
           <p style={{ background: 'var(--bg-secondary)', padding: '0.6rem', borderRadius: 'var(--radius-sm)', marginBottom: '0.6rem' }}>
             <strong>দলীল (কুরআন ও হাদীস):</strong> {q.kaffarahDetailed.proof}
           </p>
@@ -106,16 +448,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </div>
             ))}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Jihad 5 Rulings Detailed */}
       {q.jihadFiveRulingsDetailed && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-cyan)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-cyan)' }}>
-            <Scale size={18} />
-            <span>জিহাদের (الجهاد) ৫টি শরয়ী বিধান ও কুরআন-হাদীসের দলীল</span>
-          </div>
+        <CollapsibleSection title="জিহাদের (الجهاد) ৫টি শরয়ী বিধান ও কুরআন-হাদীসের দলীল" icon={Scale} borderColor="var(--accent-cyan)" defaultOpen={true}>
           <div className="comparison-grid">
             {q.jihadFiveRulingsDetailed.map((j, idx) => (
               <div className="scholar-card" key={idx}>
@@ -124,16 +462,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </div>
             ))}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Jihad On Whom Obligatory / Not Obligatory */}
       {q.jihadOnWhomObligatory && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-emerald)' }}>
-          <div className="section-title">
-            <CheckSquare size={18} />
-            <span>যার ওপর জিহাদ ফরয ও যার ওপর ফরয নয়</span>
-          </div>
+        <CollapsibleSection title="যার ওপর জিহাদ ফরয ও যার ওপর ফরয নয়" icon={CheckSquare} borderColor="var(--accent-emerald)" defaultOpen={true}>
           <div className="comparison-grid">
             <div className="scholar-card">
               <div className="scholar-name" style={{ color: 'var(--accent-emerald)' }}>যাদের ওপর ফরয (৮টি শর্ত):</div>
@@ -152,16 +486,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </ul>
             </div>
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Jihad in Current Era Detailed & Hadith Explanation */}
       {q.jihadInCurrentEraDetailed && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-gold)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-gold)' }}>
-            <Info size={18} />
-            <span>বর্তমান যুগে জিহাদের বিধান ও 'الجهاد ماض إلى يوم القيامة' হাদীসের ৩টি মূল ব্যাখ্যা</span>
-          </div>
+        <CollapsibleSection title="বর্তমান যুগে জিহাদের বিধান ও 'الجهاد ماض إلى يوم القيامة' হাদীসের ৩টি মূল ব্যাখ্যা" icon={Info} borderColor="var(--accent-gold)" defaultOpen={true}>
           <p><strong>১. বর্তমান যুগের হুকুম:</strong> {q.jihadInCurrentEraDetailed}</p>
           {q.hadithMaadinDetailedExplanation && (
             <div style={{ marginTop: '0.66rem', background: 'var(--bg-secondary)', padding: '0.6rem', borderRadius: 'var(--radius-sm)' }}>
@@ -173,16 +503,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </ul>
             </div>
           )}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* 5 Financial Terms Detailed */}
       {q.fiveTermsDetailed && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-gold)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-gold)' }}>
-            <BookOpen size={18} />
-            <span>ফায়, গনীমত, জিজিয়া, জুয়াল ও খরাজের শরয়ী সংজ্ঞা (مصطلحات مالية)</span>
-          </div>
+        <CollapsibleSection title="ফায়, গনীমত, জিজিয়া, জুয়াল ও খরাজের শরয়ী সংজ্ঞা (مصطلحات مالية)" icon={BookOpen} borderColor="var(--accent-gold)" defaultOpen={true}>
           <div className="comparison-grid">
             {q.fiveTermsDetailed.map((term, idx) => (
               <div className="scholar-card" key={idx}>
@@ -197,16 +523,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               <strong>৫টি পরিভাষার মধ্যকার পার্থক্য:</strong> {q.termsDifferenceExplanation}
             </p>
           )}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Jizyah Obligatory Conditions & Exemptions */}
       {q.jizyahObligatoryConditions && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-cyan)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-cyan)' }}>
-            <ShieldCheck size={18} />
-            <span>জিজিয়া (الجزية) কার ওপর ওয়াজিব ও কার ওপর নয়</span>
-          </div>
+        <CollapsibleSection title="জিজিয়া (الجزية) কার ওপর ওয়াজিব ও কার ওপর নয়" icon={ShieldCheck} borderColor="var(--accent-cyan)" defaultOpen={true}>
           <div className="comparison-grid">
             <div className="scholar-card">
               <div className="scholar-name" style={{ color: 'var(--accent-emerald)' }}>জিজিয়া ওয়াজিবের ৭টি শর্ত:</div>
@@ -225,16 +547,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </ul>
             </div>
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Ghanimah One Fifth Four Opinions */}
       {q.ghanimahOneFifthFourOpinions && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-gold)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-gold)' }}>
-            <Scale size={18} />
-            <span>গনীমতের এক-পঞ্চমাংশ (খুমুস) বণ্টনে ইমামদের ৪টি মতামত</span>
-          </div>
+        <CollapsibleSection title="গনীমতের এক-পঞ্চমাংশ (খুমুস) বণ্টনে ইমামদের ৪টি মতামত" icon={Scale} borderColor="var(--accent-gold)" defaultOpen={true}>
           <div className="comparison-grid">
             {q.ghanimahOneFifthFourOpinions.map((gOp, idx) => (
               <div className="scholar-card" key={idx}>
@@ -243,16 +561,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </div>
             ))}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Ghanimah Four Fifth Opinions & Abu Hanifah Rationale */}
       {q.ghanimahFourFifthOpinions && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-cyan)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-cyan)' }}>
-            <Scale size={18} />
-            <span>মুজাহিদদের মাঝে গনীমতের ৪/৫ ভাগ বণ্টন ও ইমামদের মতভেদ</span>
-          </div>
+        <CollapsibleSection title="মুজাহিদদের মাঝে গনীমতের ৪/৫ ভাগ বণ্টন ও ইমামদের মতভেদ" icon={Scale} borderColor="var(--accent-cyan)" defaultOpen={true}>
           <div className="comparison-grid">
             {q.ghanimahFourFifthOpinions.map((ff, idx) => (
               <div className="scholar-card" key={idx}>
@@ -267,16 +581,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               <strong style={{ color: 'var(--accent-gold)' }}>হানাফী মাযহাবের গ্রহণযোগ্যতার কারণ:</strong> {q.abuHanifahPreferenceRationale}
             </p>
           )}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Cavalry vs Infantry Opinions & Radz'a */}
       {q.cavalryInfantryOpinions && (
-        <div className="section-block">
-          <div className="section-title">
-            <Info size={18} />
-            <span>পদাতিক ও অশ্বারোহী নির্ধারণের সময়কাল ও 'রযঅ' (رضع)-এর বিধান</span>
-          </div>
+        <CollapsibleSection title="পদাতিক ও অশ্বারোহী নির্ধারণের সময়কাল ও 'রযঅ' (رضع)-এর বিধান" icon={Info} borderColor="var(--accent-emerald)" defaultOpen={true}>
           <div className="comparison-grid" style={{ marginBottom: '0.6rem' }}>
             {q.cavalryInfantryOpinions.map((ci, idx) => (
               <div className="scholar-card" key={idx}>
@@ -290,83 +600,59 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               <strong>রযঅ (رضع)-এর সংজ্ঞা:</strong> {q.radzaDefinition}
             </p>
           )}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Hunting: Is Restricted To Dog */}
       {q.isRestrictedToDogExplanation && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-cyan)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-cyan)' }}>
-            <Target size={18} />
-            <span>শিকার কি কেবল কুকুরের মাঝেই সীমাবদ্ধ?</span>
-          </div>
+        <CollapsibleSection title="শিকার কি কেবল কুকুরের মাঝেই সীমাবদ্ধ?" icon={Target} borderColor="var(--accent-cyan)" defaultOpen={true}>
           <p>{q.isRestrictedToDogExplanation}</p>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Trained Animal 14 Conditions */}
       {q.trainedAnimalFourteenConditions && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-emerald)' }}>
-          <div className="section-title">
-            <CheckSquare size={18} />
-            <span>প্রশিক্ষিত প্রাণী দ্বারা শিকারের ১৪টি শরয়ী শর্তাবলী</span>
-          </div>
+        <CollapsibleSection title="প্রশিক্ষিত প্রাণী দ্বারা শিকারের ১৪টি শরয়ী শর্তাবলী" icon={CheckSquare} borderColor="var(--accent-emerald)" defaultOpen={true}>
           <ul className="bullet-list">
             {q.trainedAnimalFourteenConditions.map((cond, idx) => (
               <li key={idx}>{cond}</li>
             ))}
           </ul>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Trained Dog 12 Conditions */}
       {q.trainedDogTwelveConditions && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-gold)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-gold)' }}>
-            <ShieldCheck size={18} />
-            <span>প্রশিক্ষিত কুকুরের ১২টি শরয়ী শর্তাবলী (আল্লামা কিরমানী র. এর ৪টিসহ)</span>
-          </div>
+        <CollapsibleSection title="প্রশিক্ষিত কুকুরের ১২টি শরয়ী শর্তাবলী (আল্লামা কিরমানী র. এর ৪টিসহ)" icon={ShieldCheck} borderColor="var(--accent-gold)" defaultOpen={true}>
           <ul className="bullet-list">
             {q.trainedDogTwelveConditions.map((dCond, idx) => (
               <li key={idx}>{dCond}</li>
             ))}
           </ul>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Alive Game Ruling Detailed */}
       {q.aliveGameRulingDetailed && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-gold)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-gold)' }}>
-            <Info size={18} />
-            <span>শিকারকৃত প্রাণী জীবিত পেলে তার শরয়ী ৭টি বিধান (শরহে বেকায়াহ)</span>
-          </div>
+        <CollapsibleSection title="শিকারকৃত প্রাণী জীবিত পেলে তার শরয়ী ৭টি বিধান (শরহে বেকায়াহ)" icon={Info} borderColor="var(--accent-gold)" defaultOpen={true}>
           <p>{q.aliveGameRulingDetailed}</p>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Gunshot Rulings 6 Views */}
       {q.gunshotRulingsSixViews && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-gold)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-gold)' }}>
-            <Scale size={18} />
-            <span>বন্দুক ও আধুনিক অস্ত্রের শিকারের শরয়ী বিধান (আলেমদের ৬টি দৃষ্টিভঙ্গি)</span>
-          </div>
+        <CollapsibleSection title="বন্দুক ও আধুনিক অস্ত্রের শিকারের শরয়ী বিধান (আলেমদের ৬টি দৃষ্টিভঙ্গি)" icon={Scale} borderColor="var(--accent-gold)" defaultOpen={true}>
           <ul className="bullet-list">
             {q.gunshotRulingsSixViews.map((gView, idx) => (
               <li key={idx}>{gView}</li>
             ))}
           </ul>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Three Categories Hunting Conditions */}
       {q.threeCategoriesHuntingConditions && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-cyan)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-cyan)' }}>
-            <CheckSquare size={18} />
-            <span>শিকার (صيد) হালাল হওয়ার ৩টি প্রধান ক্যাটাগরির শর্তাবলী</span>
-          </div>
+        <CollapsibleSection title="শিকার (صيد) হালাল হওয়ার ৩টি প্রধান ক্যাটাগরির শর্তাবলী" icon={CheckSquare} borderColor="var(--accent-cyan)" defaultOpen={true}>
           <div className="comparison-grid">
             <div className="scholar-card">
               <div className="scholar-name" style={{ color: 'var(--accent-gold)' }}>১. প্রেরণকারীর শর্তাবলী (৬টি):</div>
@@ -393,16 +679,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </ul>
             </div>
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Slaughter Two Types */}
       {q.slaughterTwoTypes && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-ruby)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-ruby)' }}>
-            <Flame size={18} />
-            <span>যবাইয়ের ২ প্রকার (الذبح الاضطراري ও الذبح الاختياري)</span>
-          </div>
+        <CollapsibleSection title="যবাইয়ের ২ প্রকার (الذبح الاضطراري ও الذبح الاختياري)" icon={Flame} borderColor="var(--accent-ruby)" defaultOpen={true}>
           <div className="comparison-grid">
             {q.slaughterTwoTypes.map((st, idx) => (
               <div className="scholar-card" key={idx}>
@@ -411,16 +693,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </div>
             ))}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Slaughter Permissible & Impermissible Tools */}
       {q.slaughterPermissibleTools && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-emerald)' }}>
-          <div className="section-title">
-            <CheckSquare size={18} />
-            <span>যেসব বস্তু দ্বারা যবাই বৈধ এবং যেসব বস্তু দ্বারা বৈধ নয়</span>
-          </div>
+        <CollapsibleSection title="যেসব বস্তু দ্বারা যবাই বৈধ এবং যেসব বস্তু দ্বারা বৈধ নয়" icon={CheckSquare} borderColor="var(--accent-emerald)" defaultOpen={true}>
           <strong>১. যা দ্বারা যবাই বৈধ:</strong>
           <ul className="bullet-list" style={{ marginTop: '0.3rem', marginBottom: '0.6rem' }}>
             {q.slaughterPermissibleTools.map((tool, idx) => (
@@ -437,16 +715,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </ul>
             </div>
           )}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Slaughter Mustahab & Makruh Rules */}
       {q.slaughterMustahabRules && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-gold)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-gold)' }}>
-            <Info size={18} />
-            <span>যবাইয়ের ৯টি মুস্তাহাব ও ১১টি মাকরূহ কার্যাাবলী</span>
-          </div>
+        <CollapsibleSection title="যবাইয়ের ৯টি মুস্তাহাব ও ১১টি মাকরূহ কার্যাাবলী" icon={Info} borderColor="var(--accent-gold)" defaultOpen={true}>
           <div className="comparison-grid">
             <div className="scholar-card">
               <div className="scholar-name" style={{ color: 'var(--accent-emerald)' }}>যবাইয়ের ৯টি মুস্তাহাব কাজ:</div>
@@ -465,16 +739,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </ul>
             </div>
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Mad Person, Pagan, Magian Slaughter */}
       {q.madPersonSlaughter && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-cyan)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-cyan)' }}>
-            <Scale size={18} />
-            <span>পাগল, মূর্তিপূজক ও অগ্নিপূজক ব্যক্তির যবাইয়ের শরয়ী বিধান</span>
-          </div>
+        <CollapsibleSection title="পাগল, মূর্তিপূজক ও অগ্নিপূজক ব্যক্তির যবাইয়ের শরয়ী বিধান" icon={Scale} borderColor="var(--accent-cyan)" defaultOpen={true}>
           <strong>১. পাগল ব্যক্তির (مجنون) যবাই:</strong>
           <div className="comparison-grid" style={{ marginTop: '0.3rem', marginBottom: '0.6rem' }}>
             {q.madPersonSlaughter.map((mp, idx) => (
@@ -489,16 +759,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               <strong>২. মূর্তিপূজক ও অগ্নিপূজকের যবাই:</strong> {q.paganAndMagianSlaughter}
             </p>
           )}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Bismillah Omission Rulings */}
       {q.bismillahOmissionDetailed && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-gold)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-gold)' }}>
-            <HelpCircle size={18} />
-            <span>বিসমিল্লাহ (تسمية) বর্জনকারীর যবাইয়ের শরয়ী বিধান (৩টি অবস্থা)</span>
-          </div>
+        <CollapsibleSection title="বিসমিল্লাহ (تسمية) বর্জনকারীর যবাইয়ের শরয়ী বিধান (৩টি অবস্থা)" icon={HelpCircle} borderColor="var(--accent-gold)" defaultOpen={true}>
           <div className="comparison-grid">
             {q.bismillahOmissionDetailed.map((b, idx) => (
               <div className="scholar-card" key={idx}>
@@ -512,16 +778,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               <strong>ইমাম শাফেয়ীর দলীলের হানাফী জবাব:</strong> {q.bismillahShafiAnswer}
             </p>
           )}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Veins List & Opinions */}
       {q.veinsListDetailed && (
-        <div className="section-block">
-          <div className="section-title">
-            <ShieldCheck size={18} />
-            <span>যবাইয়ের ৪টি রগের পরিচয় ও ইমামদের মতভেদ</span>
-          </div>
+        <CollapsibleSection title="যবাইয়ের ৪টি রগের পরিচয় ও ইমামদের মতভেদ" icon={ShieldCheck} borderColor="var(--accent-emerald)" defaultOpen={true}>
           <ul className="bullet-list" style={{ marginBottom: '0.6rem' }}>
             {q.veinsListDetailed.map((v, idx) => (
               <li key={idx}>{v}</li>
@@ -532,16 +794,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               <strong>রগ কর্তনে ইমামদের মতভেদ:</strong> {q.veinsOpinions}
             </p>
           )}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Fetus in Slaughtered Mother */}
       {q.fetusInSlaughteredMother && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-ruby)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-ruby)' }}>
-            <Scale size={18} />
-            <span>যবাইকৃত পশুর গর্ভস্থ বাচ্চার (الجنين) বিধান ও দলীলের জবাব</span>
-          </div>
+        <CollapsibleSection title="যবাইকৃত পশুর গর্ভস্থ বাচ্চার (الجنين) বিধান ও দলীলের জবাব" icon={Scale} borderColor="var(--accent-ruby)" defaultOpen={true}>
           <p><strong>১. বাচ্চা জীবিত পাওয়া গেলে:</strong> {q.fetusInSlaughteredMother.alive}</p>
           <strong style={{ display: 'block', marginTop: '0.6rem' }}>২. বাচ্চা মৃত পাওয়া গেলে ইমামদের মতভেদ:</strong>
           <div className="comparison-grid" style={{ marginTop: '0.3rem', marginBottom: '0.6rem' }}>
@@ -563,16 +821,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </ul>
             </div>
           )}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Qurbani Conditions & Obligatory Time */}
       {q.qurbaniConditions && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-emerald)' }}>
-          <div className="section-title">
-            <CheckSquare size={18} />
-            <span>কোরবানি কার ওপর ও কখন ওয়াজিব</span>
-          </div>
+        <CollapsibleSection title="কোরবানি কার ওপর ও কখন ওয়াজিব" icon={CheckSquare} borderColor="var(--accent-emerald)" defaultOpen={true}>
           <strong>কোরবানি ওয়াজিব হওয়ার ৫টি শর্ত:</strong>
           <ul className="bullet-list" style={{ marginTop: '0.3rem', marginBottom: '0.6rem' }}>
             {q.qurbaniConditions.map((cond, idx) => (
@@ -584,16 +838,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               <strong>কোরবানি ওয়াজিব হওয়ার সময়:</strong> {q.qurbaniTimeObligatory}
             </p>
           )}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Qurbani Ruling Opinions */}
       {q.qurbaniRulingOpinions && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-cyan)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-cyan)' }}>
-            <Scale size={18} />
-            <span>কোরবানির শরয়ী হুকুম সম্পর্কে ফকীহদের দৃষ্টিভঙ্গি</span>
-          </div>
+        <CollapsibleSection title="কোরবানির শরয়ী হুকুম সম্পর্কে ফকীহদের দৃষ্টিভঙ্গি" icon={Scale} borderColor="var(--accent-cyan)" defaultOpen={true}>
           <div className="comparison-grid">
             {q.qurbaniRulingOpinions.map((item, idx) => (
               <div className="scholar-card" key={idx}>
@@ -603,75 +853,55 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </div>
             ))}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* 15 Meat Rules */}
       {q.fifteenMeatRules && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-gold)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-gold)' }}>
-            <Heart size={18} />
-            <span>কোরবানির গোশতের ১৫টি শরয়ী বিধান (حكم لحم الأضحية)</span>
-          </div>
+        <CollapsibleSection title="কোরবানির গোশতের ১৫টি শরয়ী বিধান (حكم لحم الأضحية)" icon={Heart} borderColor="var(--accent-gold)" defaultOpen={true}>
           <ul className="bullet-list">
             {q.fifteenMeatRules.map((rule, idx) => (
               <li key={idx}>{rule}</li>
             ))}
           </ul>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* 8 Skin Rules */}
       {q.eightSkinRules && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-gold)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-gold)' }}>
-            <ShieldCheck size={18} />
-            <span>কোরবানির চামড়ার ৮টি শরয়ী বিধান (حكم جلد الأضحية)</span>
-          </div>
+        <CollapsibleSection title="কোরবানির চামড়ার ৮টি শরয়ী বিধান (حكم جلد الأضحية)" icon={ShieldCheck} borderColor="var(--accent-gold)" defaultOpen={true}>
           <ul className="bullet-list">
             {q.eightSkinRules.map((sRule, idx) => (
               <li key={idx}>{sRule}</li>
             ))}
           </ul>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Defective Animals Detailed */}
       {q.defectiveAnimalsDetailed && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-ruby)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-ruby)' }}>
-            <AlertTriangle size={18} />
-            <span>ত্রুটিযুক্ত চতুষ্পদ পশুর কোরবানির শরয়ী বিধান</span>
-          </div>
+        <CollapsibleSection title="ত্রুটিযুক্ত চতুষ্পদ পশুর কোরবানির শরয়ী বিধান" icon={AlertTriangle} borderColor="var(--accent-ruby)" defaultOpen={true}>
           <ul className="bullet-list">
             {q.defectiveAnimalsDetailed.map((def, idx) => (
               <li key={idx}>{def}</li>
             ))}
           </ul>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Stolen & Trust Animal Rulings */}
       {q.stolenAnimalRuling && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-ruby)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-ruby)' }}>
-            <Scale size={18} />
-            <span>আত্মসাৎকৃত ও আমানতকৃত পশুর কোরবানির শরয়ী মাসআলা</span>
-          </div>
+        <CollapsibleSection title="আত্মসাৎকৃত ও আমানতকৃত পশুর কোরবানির শরয়ী মাসআলা" icon={Scale} borderColor="var(--accent-ruby)" defaultOpen={true}>
           <p><strong>১. আত্মসাৎকৃত পশুর কোরবানি:</strong> {q.stolenAnimalRuling}</p>
           {q.trustAnimalRuling && (
             <p style={{ marginTop: '0.6rem' }}><strong>২. আমানতকৃত পশুর কোরবানি:</strong> {q.trustAnimalRuling}</p>
           )}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Mistaken Slaughter Ruling */}
       {q.mistakenSlaughterRuling && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-cyan)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-cyan)' }}>
-            <HelpCircle size={18} />
-            <span>ভুলক্রমে পরস্পরের পশুর যবাইকরণ (ইস্তিহসান বনাম কিয়াস)</span>
-          </div>
+        <CollapsibleSection title="ভুলক্রমে পরস্পরের পশুর যবাইকরণ (ইস্তিহসান বনাম কিয়াস)" icon={HelpCircle} borderColor="var(--accent-cyan)" defaultOpen={true}>
           <p style={{ marginBottom: '0.5rem' }}><strong>বিষয়:</strong> {q.mistakenSlaughterRuling.topic}</p>
           <div className="comparison-grid">
             <div className="scholar-card">
@@ -688,16 +918,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               <strong>জমহুরের সিদ্ধান্ত:</strong> {q.mistakenSlaughterRuling.counterReply}
             </p>
           )}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Hajj Akbar Opinions */}
       {q.hajjAkbar && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-gold)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-gold)' }}>
-            <Info size={18} />
-            <span>الحج الأكبر (হজ্জে আকবর)-এর উদ্দেশ্য সম্পর্কিত মতামত</span>
-          </div>
+        <CollapsibleSection title="الحج الأكبر (হজ্জে আকবর)-এর উদ্দেশ্য সম্পর্কিত মতামত" icon={Info} borderColor="var(--accent-gold)" defaultOpen={true}>
           <div className="comparison-grid">
             {q.hajjAkbar.map((item, idx) => (
               <div className="scholar-card" key={idx}>
@@ -706,31 +932,23 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </div>
             ))}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Fard Conditions */}
       {q.fardConditions && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-emerald)' }}>
-          <div className="section-title">
-            <CheckSquare size={18} />
-            <span>হজ্জ কার ওপর ফরয হওয়ার শর্তাবলি</span>
-          </div>
+        <CollapsibleSection title="হজ্জ কার ওপর ফরয হওয়ার শর্তাবলি" icon={CheckSquare} borderColor="var(--accent-emerald)" defaultOpen={true}>
           <ul className="bullet-list">
             {q.fardConditions.map((cond, idx) => (
               <li key={idx}>{cond}</li>
             ))}
           </ul>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Imams Difference Matrix */}
       {q.imamsDifference && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-cyan)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-cyan)' }}>
-            <Scale size={18} />
-            <span>আইম্মায়ে কিরামের মতভেদ: {q.imamsDifference.topic}</span>
-          </div>
+        <CollapsibleSection title="আইম্মায়ে কিরামের মতভেদ: {q.imamsDifference.topic}" icon={Scale} borderColor="var(--accent-cyan)" defaultOpen={true}>
           <div className="comparison-grid">
             {q.imamsDifference.opinions.map((op, idx) => (
               <div className="scholar-card" key={idx}>
@@ -765,16 +983,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </ul>
             </div>
           )}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Fard List */}
       {q.fardList && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-gold)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-gold)' }}>
-            <ShieldCheck size={18} />
-            <span>হজ্জের ফরযসমূহ (فرائض الحج)</span>
-          </div>
+        <CollapsibleSection title="হজ্জের ফরযসমূহ (فرائض الحج)" icon={ShieldCheck} borderColor="var(--accent-gold)" defaultOpen={true}>
           <div className="comparison-grid">
             {q.fardList.map((fard, idx) => (
               <div className="scholar-card" key={idx}>
@@ -783,31 +997,23 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </div>
             ))}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Wajib List */}
       {q.wajibList && (
-        <div className="section-block">
-          <div className="section-title">
-            <CheckSquare size={18} />
-            <span>হজ্জের ওয়াজিবসমূহ (واجبات الحج)</span>
-          </div>
+        <CollapsibleSection title="হজ্জের ওয়াজিবসমূহ (واجبات الحج)" icon={CheckSquare} borderColor="var(--accent-emerald)" defaultOpen={true}>
           <ul className="bullet-list">
             {q.wajibList.map((wajib, idx) => (
               <li key={idx}>{wajib}</li>
             ))}
           </ul>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Miqat List */}
       {q.miqatList && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-cyan)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-cyan)' }}>
-            <Info size={18} />
-            <span>হজ্জ ও ওমরার মীকাতসমূহ (مواقيت الحج)</span>
-          </div>
+        <CollapsibleSection title="হজ্জ ও ওমরার মীকাতসমূহ (مواقيت الحج)" icon={Info} borderColor="var(--accent-cyan)" defaultOpen={true}>
           <div className="comparison-grid">
             {q.miqatList.map((m, idx) => (
               <div className="scholar-card" key={idx}>
@@ -816,16 +1022,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </div>
             ))}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Hajj Types */}
       {q.hajjTypes && (
-        <div className="section-block">
-          <div className="section-title">
-            <BookOpen size={18} />
-            <span>হজ্জের প্রকারভেদ (أنواع الحج)</span>
-          </div>
+        <CollapsibleSection title="হজ্জের প্রকারভেদ (أنواع الحج)" icon={BookOpen} borderColor="var(--accent-emerald)" defaultOpen={true}>
           <div className="comparison-grid">
             {q.hajjTypes.map((ht, idx) => (
               <div className="scholar-card" key={idx}>
@@ -834,16 +1036,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </div>
             ))}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Hajj Types / Best Comparison */}
       {q.bestHajjComparison && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-gold)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-gold)' }}>
-            <Scale size={18} />
-            <span>সর্বোত্তম হজ্জ সম্পর্কিত আইম্মায়ে ফুকাহাদের মতামত ও দলীল</span>
-          </div>
+        <CollapsibleSection title="সর্বোত্তম হজ্জ সম্পর্কিত আইম্মায়ে ফুকাহাদের মতামত ও দলীল" icon={Scale} borderColor="var(--accent-gold)" defaultOpen={true}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
             {q.bestHajjComparison.map((item, idx) => (
               <div className="scholar-card" key={idx}>
@@ -858,31 +1056,23 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </div>
             ))}
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Qiran Superiority Reasons */}
       {q.qiranSuperiorityReasons && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-emerald)' }}>
-          <div className="section-title">
-            <ShieldCheck size={18} />
-            <span>হজ্জে ক্বেরান (الحج القران) উত্তম হওয়ার মূল তত্ত্বসমূহ</span>
-          </div>
+        <CollapsibleSection title="হজ্জে ক্বেরান (الحج القران) উত্তম হওয়ার মূল তত্ত্বসমূহ" icon={ShieldCheck} borderColor="var(--accent-emerald)" defaultOpen={true}>
           <ul className="bullet-list">
             {q.qiranSuperiorityReasons.map((reason, idx) => (
               <li key={idx}>{reason}</li>
             ))}
           </ul>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Ihsar Section */}
       {q.ihsar && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-ruby)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-ruby)' }}>
-            <AlertTriangle size={18} />
-            <span>ইহসার (الإحصار) - এর পরিচয় ও বিস্তারিত শরয়ী বিধান</span>
-          </div>
+        <CollapsibleSection title="ইহসার (الإحصار) - এর পরিচয় ও বিস্তারিত শরয়ী বিধান" icon={AlertTriangle} borderColor="var(--accent-ruby)" defaultOpen={true}>
           <p><strong>সংজ্ঞা:</strong> {q.ihsar.definition}</p>
 
           {q.ihsar.rulings && (
@@ -901,16 +1091,12 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               <strong>ইহসার বিবেচ্য হওয়ার ভিত্তি:</strong> {q.ihsar.basisOfIhsar}
             </p>
           )}
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* 19 Differences Table */}
       {q.nineteenDifferences && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-gold)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-gold)' }}>
-            <Scale size={18} />
-            <span>হজ্জ ও ওমরার মধ্যকার ১৯টি মৌলিক পার্থক্য (الفروق بين الحج والعمرة)</span>
-          </div>
+        <CollapsibleSection title="হজ্জ ও ওমরার মধ্যকার ১৯টি মৌলিক পার্থক্য (الفروق بين الحج والعمرة)" icon={Scale} borderColor="var(--accent-gold)" defaultOpen={true}>
           <div style={{ overflowX: 'auto', marginTop: '0.75rem' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
@@ -933,36 +1119,30 @@ export default function QaCard({ q, isBookmarked, toggleBookmark }) {
               </tbody>
             </table>
           </div>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Kaffarah */}
       {q.kaffarah && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-ruby)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-ruby)' }}>
-            <ShieldCheck size={18} />
-            <span>যিহারের কাফফারা (كفارة الظهار)</span>
-          </div>
+        <CollapsibleSection title="যিহারের কাফফারা (كفارة الظهار)" icon={ShieldCheck} borderColor="var(--accent-ruby)" defaultOpen={true}>
           <ul className="bullet-list">
             {q.kaffarah.map((k, idx) => (
               <li key={idx}>{k}</li>
             ))}
           </ul>
-        </div>
+        </CollapsibleSection>
       )}
 
       {/* Defects Rulings */}
       {q.defectsRulings && (
-        <div className="section-block" style={{ borderLeftColor: 'var(--accent-gold)' }}>
-          <div className="section-title" style={{ color: 'var(--accent-gold)' }}>
-            <Info size={18} />
-            <span>ত্রুটিযুক্ত পশুর কোরবানির শরয়ী বিধান</span>
-          </div>
+        <CollapsibleSection title="ত্রুটিযুক্ত পশুর কোরবানির শরয়ী বিধান" icon={Info} borderColor="var(--accent-gold)" defaultOpen={true}>
           <ul className="bullet-list">
             {q.defectsRulings.map((def, idx) => (
               <li key={idx}>{def}</li>
             ))}
           </ul>
+        </CollapsibleSection>
+      )}
         </div>
       )}
     </div>
