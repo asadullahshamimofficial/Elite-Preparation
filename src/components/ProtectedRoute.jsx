@@ -116,7 +116,7 @@ export default function ProtectedRoute({ children, requireAdmin = false }) {
           <div>
             <h2 className="text-2xl font-bold text-white">স্টাডি সিরিজ লক করা আছে</h2>
             <p className="text-sm text-slate-400 mt-2 leading-relaxed">
-              আলিম ২০২৬ স্টাডি সিরিজের সম্পূর্ণ প্রশ্নোত্তর ও বিস্তারিত সমাধান পড়ার জন্য অনুগ্রহ করে আপনার মোবাইল নম্বর বা জিমেইল দিয়ে প্রবেশ করুন।
+              আলিম ২০২৬ স্টাডি সিরিজের সম্পূর্ণ প্রশ্নোত্তর ও বিস্তারিত সমাধান পড়ার জন্য অনুগ্রহ করে আপনার জিমেইল আইডি দিয়ে প্রবেশ করুন।
             </p>
           </div>
 
