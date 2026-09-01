@@ -5,11 +5,8 @@ import {
   X,
   Phone,
   Mail,
-  ShieldCheck,
   CheckCircle2,
   ArrowRight,
-  Sparkles,
-  Lock,
   User,
   GraduationCap,
   AlertCircle
@@ -21,19 +18,17 @@ export default function AuthModal() {
     closeAuthModal,
     loginWithPhone,
     loginWithGoogle,
-    loginAsAdmin,
     redirectAfterLogin
   } = useAuth();
 
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState('phone'); // 'phone' | 'google' | 'admin'
+  const [activeTab, setActiveTab] = useState('phone'); // 'phone' | 'google'
   const [step, setStep] = useState(1); // 1: Input, 2: OTP, 3: Profile Setup
   const [phoneNumber, setPhoneNumber] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [generatedOtp, setGeneratedOtp] = useState('');
   const [email, setEmail] = useState('');
-  const [adminPasscode, setAdminPasscode] = useState('');
   const [name, setName] = useState('');
   const [madrasah, setMadrasah] = useState('');
   const [error, setError] = useState('');
@@ -69,7 +64,7 @@ export default function AuthModal() {
       return;
     }
 
-    // Proceed to Step 3: Profile setup (or login directly if name exists)
+    // Proceed to Step 3: Profile setup
     setStep(3);
   };
 
@@ -101,22 +96,6 @@ export default function AuthModal() {
     if (redirectAfterLogin) {
       navigate(redirectAfterLogin);
     }
-  };
-
-  const handleAdminLogin = (e) => {
-    e.preventDefault();
-    setError('');
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      const res = loginAsAdmin(adminPasscode);
-      if (res.success) {
-        closeAuthModal();
-        navigate('/admin');
-      } else {
-        setError(res.message);
-      }
-    }, 400);
   };
 
   const resetForm = () => {
@@ -163,8 +142,8 @@ export default function AuthModal() {
           </div>
         )}
 
-        {/* Tabs: Phone | Gmail | Admin */}
-        <div className="grid grid-cols-3 gap-1 p-1 bg-slate-900/90 rounded-xl border border-slate-800 mb-6 text-xs font-bold">
+        {/* Tabs: Phone | Gmail only */}
+        <div className="grid grid-cols-2 gap-1 p-1 bg-slate-900/90 rounded-xl border border-slate-800 mb-6 text-xs font-bold">
           <button
             onClick={() => { setActiveTab('phone'); resetForm(); }}
             className={`py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
@@ -174,7 +153,7 @@ export default function AuthModal() {
             }`}
           >
             <Phone size={13} />
-            <span>মোবাইল</span>
+            <span>মোবাইল নম্বর</span>
           </button>
           
           <button
@@ -186,19 +165,7 @@ export default function AuthModal() {
             }`}
           >
             <Mail size={13} />
-            <span>জিমেইল</span>
-          </button>
-
-          <button
-            onClick={() => { setActiveTab('admin'); resetForm(); }}
-            className={`py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all ${
-              activeTab === 'admin'
-                ? 'bg-amber-500 text-black shadow-md'
-                : 'text-slate-400 hover:text-slate-200'
-            }`}
-          >
-            <ShieldCheck size={13} />
-            <span>এডমিন</span>
+            <span>জিমেইল আইডি</span>
           </button>
         </div>
 
@@ -244,7 +211,7 @@ export default function AuthModal() {
                     আপনার নম্বর <strong>{phoneNumber}</strong>-এ ৬ সংখ্যার ভেরিফিকেশন কোড পাঠানো হয়েছে।
                   </p>
                   <div className="mt-2 text-xs font-bold text-amber-400 bg-black/40 py-1 px-3 rounded-lg inline-block border border-amber-500/30">
-                    টেস্ট কোড: {generatedOtp || '123456'}
+                    ভেরিফিকেশন কোড: {generatedOtp || '123456'}
                   </div>
                 </div>
 
@@ -393,41 +360,6 @@ export default function AuthModal() {
             >
               <span>জিমেইল দিয়ে প্রবেশ করুন</span>
               <ArrowRight size={16} />
-            </button>
-          </form>
-        )}
-
-        {/* Tab 3: Admin Passcode Login */}
-        {activeTab === 'admin' && (
-          <form onSubmit={handleAdminLogin} className="space-y-4">
-            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300">
-              এডমিন ড্যাশবোর্ডে প্রবেশ করে নতুন প্রশ্ন যোগ, এডিট ও ম্যানেজ করতে পারেন।
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                এডমিন সিকিউরিটি পাসকোড
-              </label>
-              <div className="relative">
-                <Lock size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-                <input
-                  type="password"
-                  value={adminPasscode}
-                  onChange={(e) => setAdminPasscode(e.target.value)}
-                  placeholder="পাসকোড লিখুন (যেমন: admin123)"
-                  required
-                  className="w-full bg-slate-900/90 border border-slate-700 focus:border-amber-500 rounded-xl py-3 pl-10 pr-4 text-sm text-white focus:outline-none"
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="w-full py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-amber-400 to-yellow-500 text-black hover:from-amber-300 hover:to-yellow-400 transition-all shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2"
-            >
-              <ShieldCheck size={16} />
-              <span>{isLoading ? 'যাচাই হচ্ছে...' : 'এডমিন প্যানেলে প্রবেশ করুন'}</span>
             </button>
           </form>
         )}
