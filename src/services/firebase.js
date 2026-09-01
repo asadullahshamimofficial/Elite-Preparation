@@ -5,26 +5,35 @@ import {
   setDoc,
   getDoc,
   collection,
-  getDocs,
-  serverTimestamp
+  getDocs
 } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
-// User's Live Firebase Web App Configuration
+// Read Firebase Web App Configuration securely from environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyAsbXWjO1PeTyEOUJjBvS-j34AhTQWR-00",
-  authDomain: "elite-preparation.firebaseapp.com",
-  projectId: "elite-preparation",
-  storageBucket: "elite-preparation.firebasestorage.app",
-  messagingSenderId: "910743738250",
-  appId: "1:910743738250:web:a1f4aed80ef6573ea05a73",
-  measurementId: "G-JHR9G5PYKC"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "elite-preparation.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "elite-preparation",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "elite-preparation.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || ""
 };
 
-// Initialize Firebase
-const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
+// Initialize Firebase safely
+let app = null;
+let db = null;
+let auth = null;
+
+try {
+  if (firebaseConfig.apiKey) {
+    app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+    db = getFirestore(app);
+    auth = getAuth(app);
+  }
+} catch (error) {
+  console.warn("Firebase initialization notice:", error);
+}
 
 export { app, db, auth };
 
@@ -60,14 +69,17 @@ export async function saveStudentProfile(studentId, profileData) {
   }
 
   // 2. Save directly to Firebase Firestore Cloud Database
-  try {
-    const userRef = doc(db, 'students', cleanId);
-    await setDoc(userRef, dataToSave, { merge: true });
-    return { success: true, source: 'firebase' };
-  } catch (err) {
-    console.warn("Firestore cloud sync notice:", err);
-    return { success: true, source: 'local' };
+  if (db) {
+    try {
+      const userRef = doc(db, 'students', cleanId);
+      await setDoc(userRef, dataToSave, { merge: true });
+      return { success: true, source: 'firebase' };
+    } catch (err) {
+      console.warn("Firestore cloud sync notice:", err);
+    }
   }
+
+  return { success: true, source: 'local' };
 }
 
 /**
@@ -76,13 +88,12 @@ export async function saveStudentProfile(studentId, profileData) {
 export async function getStudentProfile(studentId) {
   const cleanId = (studentId || '').replace(/[^a-zA-Z0-9_-]/g, '_');
   
-  if (cleanId) {
+  if (db && cleanId) {
     try {
       const userRef = doc(db, 'students', cleanId);
       const snap = await getDoc(userRef);
       if (snap.exists()) {
         const firestoreData = snap.data();
-        // Sync back to local storage
         localStorage.setItem('elite_auth_user', JSON.stringify(firestoreData));
         return firestoreData;
       }
@@ -103,18 +114,20 @@ export async function getStudentProfile(studentId) {
  * Fetch all registered students from Firestore for Admin Panel
  */
 export async function getAllStudentsFromFirestore() {
-  try {
-    const snapshot = await getDocs(collection(db, 'students'));
-    const list = [];
-    snapshot.forEach(docSnap => {
-      list.push(docSnap.data());
-    });
-    if (list.length > 0) {
-      localStorage.setItem('elite_registered_students', JSON.stringify(list));
-      return list;
+  if (db) {
+    try {
+      const snapshot = await getDocs(collection(db, 'students'));
+      const list = [];
+      snapshot.forEach(docSnap => {
+        list.push(docSnap.data());
+      });
+      if (list.length > 0) {
+        localStorage.setItem('elite_registered_students', JSON.stringify(list));
+        return list;
+      }
+    } catch (err) {
+      console.warn("Firestore students fetch error:", err);
     }
-  } catch (err) {
-    console.warn("Firestore students fetch error:", err);
   }
 
   try {

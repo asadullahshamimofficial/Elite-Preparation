@@ -1,38 +1,19 @@
-<<<<<<< HEAD
-node_modules
-dist
-.env
-.env.local
-*.log
-.DS_Store
-=======
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
 node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
 
-# Editor directories and files
+# Editor directories
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
 
-# Scratch scripts
+# Temporary/scratch files
 *.cjs
 note.txt
 fiqhData_head.js
->>>>>>> a810990 (feat: complete Balagat & Mantiq (210) module, interactive UI, clean routing and Netlify deploy ready)

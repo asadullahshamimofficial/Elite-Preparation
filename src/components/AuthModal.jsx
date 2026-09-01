@@ -18,9 +18,9 @@ import {
   Inbox
 } from 'lucide-react';
 
-const EMAILJS_SERVICE_ID = 'service_rqku2be';
-const EMAILJS_TEMPLATE_ID = 'template_y4jffrp';
-const EMAILJS_PUBLIC_KEY = 'w_jjAvyowTeD6NZif';
+const EMAILJS_SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID || 'service_rqku2be';
+const EMAILJS_TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID || 'template_y4jffrp';
+const EMAILJS_PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY || 'w_jjAvyowTeD6NZif';
 
 export default function AuthModal() {
   const {
