@@ -1,5 +1,7 @@
 import React from 'react';
-import { BookOpen, Search, Sun, Moon, Bookmark, HelpCircle, Printer, Type, Menu } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { BookOpen, Search, Sun, Moon, Bookmark, HelpCircle, Printer, Type, Menu, User, LogOut, ShieldCheck } from 'lucide-react';
 
 export default function Header({
   titleBn = "ফিকহ প্রথম পত্র",
@@ -17,6 +19,8 @@ export default function Header({
   handlePrint,
   onOpenSidebar
 }) {
+  const { user, isAdmin, logout } = useAuth();
+
   return (
     <header className="app-header">
       <div className="header-content">
@@ -61,6 +65,19 @@ export default function Header({
 
         {/* Right: Controls Group */}
         <div className="controls-group">
+          {/* User badge if logged in */}
+          {user && (
+            <div className="hidden lg:flex items-center gap-2 bg-slate-900/90 border border-slate-800 px-2.5 py-1 rounded-xl text-xs">
+              <span className="w-2 h-2 rounded-full bg-emerald-400" />
+              <span className="font-bold text-white max-w-[100px] truncate">{user.name}</span>
+              {isAdmin && (
+                <Link to="/admin" className="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.5 rounded font-bold">
+                  এডমিন
+                </Link>
+              )}
+            </div>
+          )}
+
           {/* Font size toggle */}
           <button
             className="btn-icon"

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import {
   BookOpen,
   CheckCircle2,
@@ -27,7 +28,12 @@ import {
   Menu,
   X,
   ScrollText,
-  FileText
+  FileText,
+  Lock,
+  LogIn,
+  LogOut,
+  UserCheck,
+  ShieldAlert
 } from 'lucide-react';
 
 // Brand Monogram Logo
@@ -98,27 +104,19 @@ const BookCover = () => (
           </div>
         </div>
 
-        {/* Ribbon & Badge */}
-        <div>
-          <div
-            className="w-[120%] -ml-6 py-2 px-6 my-2 text-center shadow-md relative overflow-hidden"
-            style={{ background: 'linear-gradient(90deg, #111111 0%, #1c1c1c 50%, #111111 100%)' }}
-          >
-            <div className="absolute top-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500" />
-            <p className="text-xs font-bold text-amber-400 flex items-center justify-center gap-2">
-              <span>পরিকল্পিত প্রস্তুতি</span>
-              <span className="text-white">•</span>
-              <span>সর্বোচ্চ সাফল্য</span>
-            </p>
-            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500" />
+        {/* Bottom Feature Badges */}
+        <div className="space-y-1.5 pt-3 border-t border-gray-300/80">
+          <div className="flex items-center gap-1.5 text-xs text-gray-700 font-semibold">
+            <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            <span>ফিকহ ১ম পত্র পূর্ণাঙ্গ সমাধান</span>
           </div>
-
-          <div className="flex items-center justify-between mt-2 pt-2 text-[11px] text-gray-700 font-semibold border-t border-gray-200">
-            <div className="flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded-full bg-black text-amber-400 flex items-center justify-center font-bold text-[9px]">eP</div>
-              <span>প্রস্তুতকারক: এলিট টিম</span>
-            </div>
-            <span className="bg-amber-100 text-amber-900 px-2 py-0.5 rounded text-[10px] font-bold">২০২৬ সংস্করণ</span>
+          <div className="flex items-center gap-1.5 text-xs text-gray-700 font-semibold">
+            <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            <span>বালাগাত ও মানতিক (২১০) সম্পূর্ণ কোর্স</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-gray-700 font-semibold">
+            <div className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            <span>চার ইমামের দলীল ও বিস্তারিত ছক</span>
           </div>
         </div>
       </div>
@@ -127,171 +125,214 @@ const BookCover = () => (
 );
 
 export default function HomePage() {
+  const { user, isAuthenticated, isAdmin, openAuthModal, logout } = useAuth();
+  const navigate = useNavigate();
+
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
 
-  // Features List verbatim from User's Banner
   const featuresList = [
     {
       icon: BookOpen,
-      title: "অভিজ্ঞতাভিত্তিক স্মার্ট সাজেশন",
-      desc: "আলিম পরীক্ষা ২০২৬-এর জন্য অভিজ্ঞতার আলোকে প্রস্তুতকৃত নির্বাচিত ও পরিকল্পিত চিক সেশন।"
-    },
-    {
-      icon: CheckCircle2,
-      title: "পূর্ণাঙ্গ ও মানসম্মত উত্তরপত্র",
-      desc: "প্রতিটি সাজেশনের সাথে থাকবে পূর্ণাঙ্গ ও মানসম্মত উত্তরপত্র, যা কার্যকর প্রস্তুতিতে সহায়ক।"
+      title: "মূল কিতাবের নির্ভুল এবারত ও রেফারেন্স",
+      desc: "আল-হিদায়া, কানযুদ্ দাকায়িক, ফাতহুল কাদীর, ক্বুদূরী, ও دروس البلاغة কিতাব থেকে সরাসরি আরবী মূল পাঠ ও নির্ভরযোগ্য বঙ্গানুবাদ।"
     },
     {
       icon: Target,
-      title: "অধিক সম্ভাবনাময় প্রশ্ন নির্বাচন",
-      desc: "গুরুত্বপূর্ণ, অধিক সম্ভাবনাময় ও বারবার আসা প্রশ্নসমূহ বাছাই করে স্মার্ট প্রস্তুতি নিশ্চিত করা হয়েছে।"
+      title: "শতভাগ পরীক্ষাকেন্দ্রিক ও সর্বোচ্চ কমন প্রশ্ন",
+      desc: "আলিম পরীক্ষার বিগত ১০ বছরের প্রশ্ন এনালাইসিস করে তৈরি শতভাগ সাজেস্টেড ও সম্ভাব্য রচনামূলক ও সংক্ষিপ্ত প্রশ্নমালা।"
     },
     {
-      icon: Clock,
-      title: "Final Short Suggestion",
-      desc: "পরীক্ষার পূর্ব মুহূর্তে সর্বোচ্চ রিভিশনের জন্য প্রদান করা হবে Final Short Suggestion।"
+      icon: Layers,
+      title: "২৪টি তুলনামূলক মাসআলা ও পার্থক্য ছক",
+      desc: "হজ্জ বনাম ওমরাহ, নিকাহ বনাম বায়, তালাকের স্তরভেদ ও শিকার-যবাইয়ের জটিল মাসআলাগুলো চমৎকার ছক আকারে উপস্থাপন।"
     },
     {
-      icon: MessageCircle,
-      title: "Private WhatsApp Support Group",
-      desc: "পরীক্ষার শেষ দিন পর্যন্ত থাকবে Private WhatsApp Support Group-এ ধারাবাহিক গাইডলাইন, আপডেট ও প্রয়োজনীয় সহায়তা।"
+      icon: ShieldCheck,
+      title: "ইমামগণের মতভেদ ও প্রামাণ্য দলীল",
+      desc: "ইমাম আবু হানীফা (র), ইমাম শাফেয়ী (র), ইমাম মালেক (র) ও ইমাম আহমাদ (র)-এর মতপার্থক্য এবং কুরআন-হাদিসের অকাট্য দলীল।"
     },
     {
-      icon: Headphones,
-      title: "দ্রুত ও নির্ভরযোগ্য প্রাইভেট সাপোর্ট",
-      desc: "পড়াশোনাজনিত যেকোনো সমস্যা, প্রশ্ন বা দ্বিধার ক্ষেত্রে থাকবে দ্রুত ও নির্ভরযোগ্য প্রাইভেট সাপোর্ট।"
+      icon: Flame,
+      title: "বালাগাত ও মানতিক (২১০) পূর্ণাঙ্গ মডিউল",
+      desc: "ইলমুল বালাগাহ ও ইলমুল মানতিকের ১৯টি গুরুত্বপূর্ণ প্রশ্নের আরবী এবারত, কিতাবের রেফারেন্স ও নির্ভুল সমাধান।"
+    },
+    {
+      icon: Zap,
+      title: "স্মার্ট রিডার, ডাবল অ্যাকর্ডিয়ন ও কুইজ",
+      desc: "প্রশ্ন ও সেকশন ব্লক ক্লিক করে বন্ধ/খোলার সুবিধা, পিল ট্যাব ফিল্টার, বুকমার্কিং এবং প্রতিটি বিষয়ের ওপর স্বয়ংক্রিয় কুইজ পরীক্ষা।"
     }
   ];
 
-  // Upgraded Study Series Data with Pills and Glow Effect
   const studySeries = [
     {
-      id: "fiqh-1st",
+      id: "fiqh-1",
       titleBn: "ফিকহ প্রথম পত্র",
       titleAr: "الفقه - الورقة الأولى",
+      badge: "পূর্ণাঙ্গ লাইভ",
       status: "active",
-      badge: "উন্মুক্ত ও প্রস্তুত",
-      description: "কিতাবুল হজ্জ, কিতাবুন নিকাহ, কিতাবুত তালাক, কিতাবুজ জিহাদ সহ মোট ৭টি মৌলিক অধ্যায়ের বিস্তারিত প্রশ্নোত্তর, ইমামদের মতামত ও দলীলসমূহ।",
-      pills: ["১২+ বিশদ প্রশ্ন", "৭টি অধ্যায়", "২৪টি পার্থক্য ছক", "ইমামদের মতপার্থক্য", "কুইজ টেস্ট"],
+      description: "কিতাবুল হজ্জ, কিতাবুন নিকাহ, কিতাবুত তালাক, কিতাবুজ জিহাদ, কিতাবুস সইদ, কিতাবুয যাবায়েহ এবং কিতাবুল উদহিয়্যাহ—সবগুলো অধ্যায়ের দলীলভিত্তিক সমাধান।",
+      pills: ["হজ্জ", "নিকাহ", "তালাক", "জিহাদ", "শিকার", "যবাই", "কোরবানি"],
       link: "/alim/fiqh-1st-paper",
       available: true,
       glow: true
     },
     {
-      id: "balagat-mantiq",
-      titleBn: "বালাগাত ও মানতিক",
+      id: "balagat",
+      titleBn: "বালাগাত ও মানতিক (২১০)",
       titleAr: "البلاغة والمنطق",
+      badge: "পূর্ণাঙ্গ লাইভ",
       status: "active",
-      badge: "উন্মুক্ত ও প্রস্তুত",
-      description: "আলিম পরীক্ষার বালাগাত (১০টি প্রশ্ন) ও মানতিক (৯টি প্রশ্ন) অংশের সকল মৌলিক প্রশ্ন, دروس البلاغة ও المرقاة-এর সংজ্ঞা এবং আরবী এবারতসহ পূর্ণাঙ্গ উত্তরপত্র।",
-      pills: ["১৯টি বিশদ প্রশ্ন", "বালাগাত ও মানতিক পর্ব", "দরূসুল বালাগাহ ও মিরকাত", "কুইজ টেস্ট"],
+      description: "বালাগাত পর্বের ১০টি এবং মানতিক পর্বের ৯টি—মোট ১৯টি গুরুত্বপূর্ণ প্রশ্নের মূল কিতাবভিত্তিক আরবী এবারত, অনুবাদ, সংজ্ঞা ও বিস্তারিত ছক।",
+      pills: ["বালাগাত (১০)", "মানতিক (৯)", "দরূসুল বালাগাহ", "আল-মিরকাত", "শারহুত তাহযীব"],
       link: "/alim/balagat-and-mantiq",
       available: true,
       glow: true
     },
     {
-      id: "quran-tajweed",
-      titleBn: "কুরআন মাজীদ ও তাজভীদ",
-      titleAr: "القرآن المجيد والتجويد",
-      status: "upcoming",
-      badge: "শীঘ্রই আসছে",
-      description: "নির্বাচিত সূরাসমূহের শানে নুযূল, তাফসীর ও তাজভীদের নিয়মাবলি সংবলিত বিশেষ প্র্যাকটিস মডিউল।",
-      pills: ["শানে নুযূল", "শব্দার্থ ও তাফসীর", "তাজভীদ রুলস", "পরীক্ষার কমন প্রশ্ন"],
-      link: "#",
-      available: false,
-      glow: false
-    },
-    {
-      id: "hadith-usul",
+      id: "hadith",
       titleBn: "হাদীস ও উসূলে হাদীস",
       titleAr: "الحديث وأصول الحديث",
-      status: "upcoming",
       badge: "শীঘ্রই আসছে",
-      description: "মিশকাতুল মাসাবীহ থেকে নির্বাচিত হাদীসসমূহের সনদ, মতন ও বিস্তারিত ফিকহী ব্যাখ্যা নোট।",
-      pills: ["সনদ ও মতন", "রাবীদের পরিচয়", "ফিকহী বিশ্লেষণ", "রিভিশন শিট"],
+      status: "upcoming",
+      description: "মিশকাতুল মাসাবীহ থেকে নির্বাচিত অধ্যায়সমূহের হাদিসের ব্যাখ্যা ও নুখবাতুল ফিকারের আলোকে উসূলে হাদিসের বিস্তারিত নোট।",
+      pills: ["কিতাবুল ঈমান", "কিতাবুস্ সালাত", "মুস্তালাহুল হাদিস"],
+      link: "#",
+      available: false,
+      glow: false
+    },
+    {
+      id: "quran",
+      titleBn: "কুরআন মাজীদ ও তাজভীদ",
+      titleAr: "القرآن المجيد والتجويد",
+      badge: "শীঘ্রই আসছে",
+      status: "upcoming",
+      description: "আলিম সিলেবাসভুক্ত সূরার তাফসির, শানে নুযূল, শব্দের তাহকীক ও তাজভীদের নিয়মাবলীর সুবিন্যস্ত গাইডলাইন।",
+      pills: ["সূরা বাকারাহ", "সূরা আল ইমরান", "মাখরাজ ও সিফাত"],
       link: "#",
       available: false,
       glow: false
     }
   ];
 
-  // Interactive FAQs for Alim Students
   const faqList = [
     {
-      q: "এলিট প্রিপারেশনের সাজেশনের বাইরে কি অন্য কিছু পড়ার প্রয়োজন হবে?",
-      a: "আমাদের সাজেশনটি অভিজ্ঞ শিক্ষকদের মাধ্যমে বিগত বছরের বোর্ড প্রশ্ন, গুরুত্বপূর্ণ অধ্যায় এবং অধিক সম্ভাবনাময় প্রশ্নসমূহ বিশ্লেষণ করে প্রস্তুত করা হয়েছে। প্রতিটি প্রশ্নের সাথেই পূর্ণাঙ্গ ও মানসম্মত উত্তর সংযুক্ত থাকায় এই নোটগুলো ভালোভাবে আয়ত্ত করলে অতিরিক্ত কোনো গাইডের প্রয়োজন হবে না।"
+      q: "এলিট প্রিপারেশন কীভাবে আলিম পরীক্ষায় শতভাগ প্রস্তুতি নিশ্চিত করবে?",
+      a: "আমাদের প্ল্যাটফর্মে সাধারণ সাজেশনের মতো কেবল প্রশ্ন তুলে ধরা হয়নি; বরং প্রতিটি প্রশ্নের মূল কিতাবভিত্তিক আরবী এবারত, বিশুদ্ধ বাংলা অনুবাদ, চার ইমামের দলীল, পার্থক্য ছক এবং প্রাসঙ্গিক মাসআলা একসাথে সুবিন্যস্ত করা হয়েছে।"
     },
     {
-      q: "প্রাইভেট WhatsApp Support Group-এ কীভাবে যুক্ত হব?",
-      a: "আমাদের দেওয়া যেকোনো নম্বরে (01618-788802) সরাসরি হোয়াটসঅ্যাপে মেসেজ দিয়ে আপনার নাম ও মাদরাসার নাম পাঠালেই আপনাকে ভেরিফাই করে প্রাইভেট সাপোর্ট গ্রুপে যুক্ত করে নেওয়া হবে।"
+      q: "স্টাডি সিরিজ পড়ার জন্য কি কোনো ফি বা চার্জ দিতে হবে?",
+      a: "না, আলিম ২০২৬ পরীক্ষার্থীদের সুবিধার্থে আমাদের প্ল্যাটফর্মের স্টাডি সিরিজগুলো উন্মুক্ত রয়েছে। শিক্ষার্থীদের সুবিধার্থে শুধুমাত্র মোবাইল নম্বর বা জিমেইল দিয়ে ভেরিফাই করে লগইন করলেই সম্পূর্ণ ফ্রি পড়া যাবে।"
     },
     {
-      q: "সাজেশনে কি আরবী এবারত ও দলীলসহ পূর্ণাঙ্গ উত্তর রয়েছে?",
-      a: "হ্যাঁ! ফিকহ ও অন্যান্য বিষয়ের প্রতিটি প্রশ্নের উত্তরে কিতাব ও হাদিসের মূল আরবী এবারত, শাব্দিক ও পারিভাষিক অর্থ, এবং চার ইমামের বিস্তারিত দলীল ও মতপার্থক্য সুন্দর ছক ও পয়েন্ট আকারে উপস্থাপন করা হয়েছে।"
+      q: "বালাগাত ও মানতিক কোর্সটি কি পুরোপুরি কমপ্লিট?",
+      a: "হ্যাঁ! বালাগাত পর্বের ১০টি এবং মানতিক পর্বের ৯টি—মোট ১৯টি সর্বোচ্চ গুরুত্বপূর্ণ প্রশ্ন মূল কিতাবের রেফারেন্সসহ সম্পূর্ণ লাইভ করা হয়েছে।"
     },
     {
-      q: "Final Short Suggestion কখন এবং কীভাবে প্রদান করা হবে?",
-      a: "পরীক্ষার ঠিক পূর্ব মুহূর্তে সর্বোচ্চ দ্রুত ও কার্যকরী রিভিশনের জন্য আমাদের প্রাইভেট হোয়াটসঅ্যাপ গ্রুপে এক্সক্লুসিভ Final Short Suggestion শিট প্রদান করা হবে।"
-    },
-    {
-      q: "বালাগাত ও মানতিক সহ অন্যান্য বিষয়ের নোটগুলো কবে থেকে পড়তে পারব?",
-      a: "ফিকহ প্রথম পত্র এবং বালাগাত ও মানতিক—উভয় বিষয়ের সম্পূর্ণ ১৯+১২টি বিশদ প্রশ্নোত্তর এখন সরাসরি প্ল্যাটফর্মে সম্পূর্ণ উন্মুক্ত ও পাঠযোগ্য। অন্যান্য বিষয়সমূহও ক্রমান্বয়ে যুক্ত হচ্ছে।"
+      q: "প্রাইভেট সাপোর্ট হোয়াটসঅ্যাপ গ্রুপে কীভাবে যুক্ত হব?",
+      a: "হোম পেজের নিচে ছেলেদের ও মেয়েদের জন্য পৃথক সুরক্ষিত হোয়াটসঅ্যাপ গ্রুপের সরাসরি লিংক দেওয়া রয়েছে। সেখানে ক্লিক করেই সহজে যুক্ত হওয়া যাবে।"
     }
   ];
 
-  return (
-    <div className="min-h-screen bg-[#0b0f17] text-slate-100 selection:bg-amber-400 selection:text-black font-sans relative overflow-x-hidden">
-      
-      {/* Background High-Tech Mesh Dots & Radial Glow */}
-      <div className="fixed inset-0 pointer-events-none opacity-20 bg-[radial-gradient(#d4af37_1px,transparent_1px)] [background-size:32px_32px]" />
-      <div className="fixed top-0 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-      <div className="fixed bottom-1/4 right-1/4 w-96 h-96 bg-yellow-500/10 rounded-full blur-3xl pointer-events-none" />
+  const handleStudySeriesClick = (e, series) => {
+    if (!series.available) return;
+    if (!isAuthenticated) {
+      e.preventDefault();
+      openAuthModal(series.link);
+    }
+  };
 
-      {/* 1. NAVBAR (নেভবার) */}
-      <nav className="sticky top-0 z-50 backdrop-blur-xl bg-[#0b0f17]/85 border-b border-amber-500/20 shadow-lg">
+  return (
+    <div className="min-h-screen bg-[#0b0f17] text-slate-100 font-sans selection:bg-amber-500 selection:text-black">
+      
+      {/* 1. TOP NAVBAR (নেভবার) */}
+      <nav className="sticky top-0 z-40 bg-[#0d131f]/95 backdrop-blur-md border-b border-amber-500/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             
-            {/* Brand Logo & Name */}
+            {/* Logo */}
             <Link to="/" className="flex items-center gap-3.5 group">
               <BrandLogo size={46} />
-              <div>
-                <div className="flex items-center gap-1.5 leading-tight">
-                  <span className="text-xl sm:text-2xl font-black text-white group-hover:text-amber-400 transition-colors">
-                    Elite
-                  </span>
-                  <span className="text-xl sm:text-2xl font-black text-amber-400">
-                    Preparation
-                  </span>
-                </div>
-                <p className="text-[10px] sm:text-xs tracking-wider text-amber-400/80 font-semibold uppercase">
-                  Your Success, Our Commitment
-                </p>
+              <div className="flex flex-col">
+                <span className="text-xl sm:text-2xl font-black tracking-tight text-white group-hover:text-amber-400 transition-colors">
+                  এলিট প্রিপারেশন
+                </span>
+                <span className="text-[11px] font-bold text-amber-400 tracking-wider">
+                  আলিম পরীক্ষা ২০২৬
+                </span>
               </div>
             </Link>
 
             {/* Desktop Navigation Links */}
-            <div className="hidden md:flex items-center gap-8 text-sm font-semibold text-slate-300">
-              <a href="#features" className="hover:text-amber-400 transition-colors">আমাদের বৈশিষ্ট্য</a>
-              <a href="#series" className="hover:text-amber-400 transition-colors">স্টাডি সিরিজ</a>
-              <a href="#faq" className="hover:text-amber-400 transition-colors">সাধারণ জিজ্ঞাসা</a>
-              <a href="#support" className="hover:text-amber-400 transition-colors">প্রাইভেট সাপোর্ট</a>
+            <div className="hidden md:flex items-center gap-8 text-sm font-semibold">
+              <a href="#features" className="text-slate-300 hover:text-amber-400 transition-colors">
+                বৈশিষ্ট্যসমূহ
+              </a>
+              <a href="#series" className="text-slate-300 hover:text-amber-400 transition-colors">
+                স্টাডি সিরিজ
+              </a>
+              <a href="#groups" className="text-slate-300 hover:text-amber-400 transition-colors">
+                প্রাইভেট গ্রুপ
+              </a>
+              <a href="#faq" className="text-slate-300 hover:text-amber-400 transition-colors">
+                সাধারণ জিজ্ঞাসা
+              </a>
+              <a href="#support" className="text-slate-300 hover:text-amber-400 transition-colors">
+                সাপোর্ট
+              </a>
             </div>
 
-            {/* CTA Button */}
+            {/* User Profile / Login & Admin CTA */}
             <div className="hidden sm:flex items-center gap-3">
-              <Link
-                to="/alim/fiqh-1st-paper"
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-400 to-yellow-500 text-black hover:from-amber-300 hover:to-yellow-400 shadow-lg shadow-amber-500/20 hover:scale-105 active:scale-95 transition-all"
-              >
-                <BookOpen size={16} />
-                <span>ফিকহ ১ম পত্র</span>
-              </Link>
+              {isAuthenticated ? (
+                <div className="flex items-center gap-2.5 bg-slate-900/90 border border-slate-800 p-1.5 pl-3 rounded-2xl">
+                  <div className="flex flex-col text-left">
+                    <span className="text-xs font-bold text-white leading-tight">
+                      {user?.name || 'শিক্ষার্থী'}
+                    </span>
+                    <span className="text-[10px] text-amber-400 font-mono">
+                      {user?.phone || user?.email || (isAdmin ? 'এডমিন' : 'লগইনকৃত')}
+                    </span>
+                  </div>
+
+                  {isAdmin && (
+                    <Link
+                      to="/admin"
+                      className="px-2.5 py-1.5 rounded-xl text-[11px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/40 hover:bg-amber-500 hover:text-black transition-all"
+                    >
+                      এডমিন প্যানেল
+                    </Link>
+                  )}
+
+                  <button
+                    onClick={logout}
+                    title="লগআউট"
+                    className="p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                  >
+                    <LogOut size={16} />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => openAuthModal()}
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold bg-gradient-to-r from-amber-400 to-yellow-500 text-black hover:from-amber-300 hover:to-yellow-400 shadow-lg shadow-amber-500/20 hover:scale-105 active:scale-95 transition-all"
+                >
+                  <LogIn size={16} />
+                  <span>লগইন করুন</span>
+                </button>
+              )}
             </div>
 
             {/* Mobile Hamburger Button */}
-            <div className="md:hidden flex items-center">
+            <div className="md:hidden flex items-center gap-2">
+              {!isAuthenticated && (
+                <button
+                  onClick={() => openAuthModal()}
+                  className="px-3 py-1.5 rounded-lg text-xs font-bold bg-amber-500 text-black"
+                >
+                  লগইন
+                </button>
+              )}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="p-2.5 rounded-xl bg-slate-900/80 text-amber-400 border border-amber-500/30"
@@ -319,6 +360,13 @@ export default function HomePage() {
                 স্টাডি সিরিজ
               </a>
               <a
+                href="#groups"
+                onClick={() => setMobileMenuOpen(false)}
+                className="px-4 py-2.5 rounded-xl hover:bg-slate-900 text-slate-200 font-medium"
+              >
+                প্রাইভেট হোয়াটসঅ্যাপ গ্রুপ
+              </a>
+              <a
                 href="#faq"
                 onClick={() => setMobileMenuOpen(false)}
                 className="px-4 py-2.5 rounded-xl hover:bg-slate-900 text-slate-200 font-medium"
@@ -332,14 +380,32 @@ export default function HomePage() {
               >
                 প্রাইভেট সাপোর্ট
               </a>
-              <Link
-                to="/alim/fiqh-1st-paper"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-bold mt-2 shadow-lg"
-              >
-                <BookOpen size={18} />
-                <span>ফিকহ ১ম পত্র পড়ুন</span>
-              </Link>
+
+              {isAuthenticated ? (
+                <div className="p-3 bg-slate-900 rounded-xl space-y-2 mt-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="text-white font-bold">{user?.name}</span>
+                    <button onClick={logout} className="text-rose-400 font-bold">লগআউট</button>
+                  </div>
+                  {isAdmin && (
+                    <Link
+                      to="/admin"
+                      onClick={() => setMobileMenuOpen(false)}
+                      className="block text-center py-2 rounded-lg bg-amber-500/20 text-amber-400 font-bold text-xs"
+                    >
+                      এডমিন প্যানেল
+                    </Link>
+                  )}
+                </div>
+              ) : (
+                <button
+                  onClick={() => { setMobileMenuOpen(false); openAuthModal(); }}
+                  className="flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-500 text-black font-bold mt-2 shadow-lg"
+                >
+                  <LogIn size={18} />
+                  <span>লগইন করুন</span>
+                </button>
+              )}
             </div>
           )}
         </div>
@@ -369,55 +435,42 @@ export default function HomePage() {
                 </p>
               </div>
 
-              {/* Black Ribbon Strip */}
-              <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-xl bg-gradient-to-r from-black via-zinc-950 to-black border border-amber-500/40 shadow-xl">
-                <div className="p-1.5 rounded-lg bg-amber-500 text-black font-bold">
-                  <BookOpen size={18} />
-                </div>
-                <span className="text-base sm:text-lg font-bold text-white">
-                  এলিট প্রস্তুতি, <span className="text-amber-400">সাফল্যের নিশ্চয়তা</span>
-                </span>
-              </div>
-
-              {/* Subtitle */}
-              <p className="text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl mx-auto lg:mx-0">
-                অভিজ্ঞ শিক্ষক ও ফিকহ গবেষকদের পরিচালনায় আলিম ২০২৬ পরীক্ষার্থীদের জন্য প্রণীত 
-                নির্বাচিত স্মার্ট সাজেশন, নির্ভুল উত্তরপত্র ও সার্বক্ষণিক প্রাইভেট সাপোর্ট।
+              <p className="text-slate-300 text-base sm:text-lg leading-relaxed max-w-2xl mx-auto lg:mx-0">
+                আলিম ২০২৬ পরীক্ষার্থীদের জন্য ফিকহ ১ম পত্র এবং বালাগাত ও মানতিক বিষয়ের সর্বোচ্চ কমন ও প্রামাণ্য দলীলভিত্তিক পূর্ণাঙ্গ স্মার্ট গাইডলাইন।
               </p>
 
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-center justify-center lg:justify-start gap-4 pt-2">
-                <Link
-                  to="/alim/fiqh-1st-paper"
-                  className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-xl text-base font-bold bg-gradient-to-r from-amber-400 to-yellow-500 text-black hover:from-amber-300 hover:to-yellow-400 shadow-xl shadow-amber-500/25 hover:scale-105 active:scale-95 transition-all"
-                >
-                  <BookOpen size={20} />
-                  <span>ফিকহ ১ম পত্র পড়া শুরু করুন</span>
-                  <ArrowRight size={18} />
-                </Link>
-
+              {/* CTA Buttons */}
+              <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start pt-2">
                 <a
                   href="#series"
-                  className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-4 rounded-xl text-base font-bold bg-slate-900/90 text-slate-200 border border-slate-700/80 hover:border-amber-500/50 hover:text-amber-400 transition-all backdrop-blur-md"
+                  className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-black text-base bg-gradient-to-r from-amber-400 to-yellow-500 text-black hover:from-amber-300 hover:to-yellow-400 shadow-xl shadow-amber-500/25 hover:scale-105 active:scale-95 transition-all"
                 >
-                  <Layers size={18} />
+                  <BookOpen size={20} />
                   <span>স্টাডি সিরিজ দেখুন</span>
+                </a>
+
+                <a
+                  href="#groups"
+                  className="w-full sm:w-auto flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-bold text-base bg-slate-900/90 text-amber-400 border-2 border-amber-500/40 hover:bg-slate-800 hover:border-amber-400 transition-all"
+                >
+                  <Users size={20} />
+                  <span>প্রাইভেট স্টাডি গ্রুপ</span>
                 </a>
               </div>
 
-              {/* Metrics Counter */}
-              <div className="pt-6 border-t border-slate-800/80 grid grid-cols-3 gap-4 text-center">
-                <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md">
-                  <div className="text-2xl font-black text-amber-400">১০০%</div>
-                  <div className="text-xs text-slate-400 font-medium mt-0.5">মানসম্মত উত্তরপত্র</div>
+              {/* Trust Badges */}
+              <div className="pt-4 grid grid-cols-3 gap-4 border-t border-slate-800/80 max-w-lg mx-auto lg:mx-0">
+                <div className="text-center lg:text-left">
+                  <div className="text-xl sm:text-2xl font-black text-amber-400">৩১+</div>
+                  <div className="text-xs text-slate-400">বিস্তারিত প্রশ্ন সমাধান</div>
                 </div>
-                <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md">
-                  <div className="text-2xl font-black text-amber-400">৭+</div>
-                  <div className="text-xs text-slate-400 font-medium mt-0.5">ফিকহ অধ্যায়</div>
+                <div className="text-center lg:text-left">
+                  <div className="text-xl sm:text-2xl font-black text-amber-400">২৪টি</div>
+                  <div className="text-xs text-slate-400">তুলনামূলক ছক ও দলীল</div>
                 </div>
-                <div className="p-3.5 rounded-2xl bg-slate-900/60 border border-white/5 backdrop-blur-md">
-                  <div className="text-2xl font-black text-amber-400">২৪/৭</div>
-                  <div className="text-xs text-slate-400 font-medium mt-0.5">প্রাইভেট গাইডলাইন</div>
+                <div className="text-center lg:text-left">
+                  <div className="text-xl sm:text-2xl font-black text-amber-400">১০০%</div>
+                  <div className="text-xs text-slate-400">কমন নিশ্চয়তা</div>
                 </div>
               </div>
 
@@ -433,23 +486,13 @@ export default function HomePage() {
       </section>
 
       {/* 3. OUR FEATURES (আমাদের বৈশিষ্ট্যসমূহ) */}
-      <section id="features" className="py-16 sm:py-24 bg-[#080c14] border-y border-amber-500/15 relative">
+      <section id="features" className="py-16 sm:py-24 bg-[#080c14] border-t border-amber-500/15 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          {/* Section Header */}
-          <div className="text-center space-y-3 mb-16">
-            <div className="inline-flex items-center gap-2 px-6 py-2 rounded-full bg-black border border-amber-500/40 shadow-lg">
-              <div className="flex gap-1 text-amber-400">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={14} className="fill-amber-400" />
-                ))}
-              </div>
-              <span className="text-sm font-black text-white uppercase tracking-wider">আমাদের বৈশিষ্ট্যসমূহ</span>
-              <div className="flex gap-1 text-amber-400">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} size={14} className="fill-amber-400" />
-                ))}
-              </div>
+          <div className="text-center space-y-4 mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold uppercase tracking-wider">
+              <Sparkles size={14} />
+              <span>কেন আমরা অদ্বিতীয়</span>
             </div>
 
             <h2 className="text-3xl sm:text-4xl font-black text-white">
@@ -460,7 +503,7 @@ export default function HomePage() {
             </p>
           </div>
 
-          {/* 6 Features Cards — Glassmorphic Dark Onyx */}
+          {/* 6 Features Cards */}
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuresList.map((item, idx) => {
               const IconComp = item.icon;
@@ -490,22 +533,10 @@ export default function HomePage() {
             })}
           </div>
 
-          {/* Promise Quote Banner */}
-          <div className="mt-12 p-6 sm:p-8 rounded-2xl bg-gradient-to-r from-black via-zinc-950 to-black border-2 border-amber-500/40 shadow-2xl text-center relative overflow-hidden">
-            <div className="flex items-center justify-center gap-2 text-amber-400 mb-2">
-              <Award size={20} />
-              <span className="text-xs sm:text-sm font-bold uppercase tracking-widest">এলিট প্রিপারেশন অঙ্গীকার</span>
-            </div>
-            <p className="text-lg sm:text-xl lg:text-2xl font-black text-white max-w-4xl mx-auto leading-snug">
-              "আমাদের লক্ষ্য শুধুমাত্র সাজেশন নয়, বরং পরিকল্পিত প্রস্তুতির মাধ্যমে শিক্ষার্থীর{' '}
-              <span className="text-amber-400">সর্বোচ্চ সাফল্য নিশ্চিত করা।</span>"
-            </p>
-          </div>
-
         </div>
       </section>
 
-      {/* 4. STUDY SERIES (স্টাডি সিরিজ) — UPGRADED CARDS WITH GLOW & PILLS */}
+      {/* 4. STUDY SERIES (স্টাডি সিরিজ) */}
       <section id="series" className="py-16 sm:py-24 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
@@ -520,11 +551,11 @@ export default function HomePage() {
               </h2>
             </div>
             <p className="text-sm text-slate-400 max-w-md">
-              আলিম পরীক্ষা ২০২৬-এর সকল বিষয়ের ধারাবাহিক স্মার্ট সিরিজ। প্রতিটি বিষয়ের ওপর পূর্ণাঙ্গ আলোচনা ও উত্তরপত্র ক্রমান্বয়ে যুক্ত হবে।
+              আলিম পরীক্ষা ২০২৬-এর সকল বিষয়ের ধারাবাহিক স্মার্ট সিরিজ। শুধুমাত্র লগইনকৃত শিক্ষার্থীদের জন্য উন্মুক্ত।
             </p>
           </div>
 
-          {/* Upgraded Grid */}
+          {/* Grid of Study Series */}
           <div className="grid md:grid-cols-2 gap-8">
             {studySeries.map((series) => (
               <div
@@ -581,12 +612,14 @@ export default function HomePage() {
                 {series.available ? (
                   <Link
                     to={series.link}
+                    onClick={(e) => handleStudySeriesClick(e, series)}
                     className={`w-full py-3.5 px-6 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${
                       series.status === 'active'
                         ? 'bg-gradient-to-r from-amber-400 to-yellow-500 text-black hover:from-amber-300 hover:to-yellow-400 shadow-lg shadow-amber-500/25'
                         : 'bg-slate-800 text-amber-400 border border-amber-500/30 hover:bg-slate-700'
                     }`}
                   >
+                    {!isAuthenticated && <Lock size={16} />}
                     <span>{series.status === 'active' ? 'এখনই পড়া শুরু করুন' : 'মডিউল ভিউ করুন'}</span>
                     <ArrowRight size={18} />
                   </Link>
@@ -605,8 +638,139 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 5. INTERACTIVE FAQ ACCORDION (সাধারণ জিজ্ঞাসা) */}
-      <section id="faq" className="py-16 sm:py-24 bg-[#080c14] border-t border-amber-500/15 relative">
+      {/* 5. PRIVATE WHATSAPP GROUPS SECTION (আলিম ২০২৬ এর প্রাইভেট গ্রুপ লিংক) */}
+      <section id="groups" className="py-16 sm:py-24 bg-[#080c14] border-t border-amber-500/15 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
+          <div className="text-center space-y-3 mb-14">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold">
+              <MessageCircle size={16} />
+              <span>এক্সক্লুসিভ স্টাডি কমিউনিটি</span>
+            </div>
+
+            <h2 className="text-3xl sm:text-4xl font-black text-white">
+              আলিম ২০২৬ এর <span className="text-amber-400">প্রাইভেট গ্রুপ লিংক</span>
+            </h2>
+            <p className="text-slate-400 text-sm sm:text-base max-w-2xl mx-auto">
+              পরীক্ষার্থীদের সুবিধার্থে ছেলে ও মেয়েদের জন্য সম্পূর্ণ পৃথক ও সুরক্ষিত হোয়াটসঅ্যাপ স্টাডি গ্রুপ
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            
+            {/* Boys WhatsApp Group Card */}
+            <div className="p-8 rounded-3xl bg-slate-900/90 backdrop-blur-xl border-2 border-amber-500/40 shadow-2xl relative overflow-hidden flex flex-col justify-between group hover:border-amber-400 transition-all">
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <span className="px-3 py-1 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 text-xs font-bold flex items-center gap-1.5">
+                    <Users size={14} /> ছেলেদের স্টাডি গ্রুপ
+                  </span>
+                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-lg">
+                    সক্রিয় ব্যাচ
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-black text-white group-hover:text-amber-400 transition-colors">
+                    👦 আলিম ২০২৬ — বয়েজ প্রাইভেট গ্রুপ
+                  </h3>
+                  <p className="text-slate-300 text-sm leading-relaxed">
+                    ফিকহ, বালাগাত-মানতিক সহ সকল বিষয়ের গুরুত্বপূর্ণ সাজেশন, হ্যান্ডনোট, প্রতিদিনের পড়া ও পরীক্ষা সংক্রান্ত সরাসরি আলোচনা।
+                  </p>
+                </div>
+
+                <ul className="space-y-2.5 text-xs text-slate-300 border-t border-slate-800 pt-4">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+                    <span>নিয়মিত গুরুত্বপূর্ণ প্রশ্ন ও উত্তর শিট প্রদান</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+                    <span>মেন্টর দ্বারা যেকোনো জটিল মাসআলার তাত্ক্ষণিক সমাধান</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+                    <span>পরীক্ষার আগে স্পেশাল শর্ট সাজেশন ও দিকনির্দেশনা</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="pt-6">
+                <a
+                  href="https://chat.whatsapp.com/B8fQAmlWEeg96bNsnFHjiM"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-4 rounded-2xl bg-[#25D366] hover:bg-[#20ba5a] text-black font-black text-base shadow-xl shadow-green-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2.5"
+                >
+                  <MessageCircle size={22} className="fill-black text-[#25D366]" />
+                  <span>ছেলেদের গ্রুপে যোগ দিন</span>
+                </a>
+              </div>
+            </div>
+
+            {/* Girls WhatsApp Group Card */}
+            <div className="p-8 rounded-3xl bg-slate-900/90 backdrop-blur-xl border-2 border-emerald-500/40 shadow-2xl relative overflow-hidden flex flex-col justify-between group hover:border-emerald-400 transition-all">
+              <div className="space-y-5">
+                <div className="flex items-center justify-between">
+                  <span className="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1.5">
+                    <ShieldCheck size={14} /> মেয়েদের প্রাইভেট গ্রুপ
+                  </span>
+                  <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-2.5 py-1 rounded-lg">
+                    ১০০% প্রাইভেট ও নিরাপদ
+                  </span>
+                </div>
+
+                <div className="space-y-2">
+                  <h3 className="text-2xl font-black text-white group-hover:text-emerald-400 transition-colors">
+                    🧕 আলিম ২০২৬ — গার্লস প্রাইভেট গ্রুপ
+                  </h3>
+                  <p className="text-slate-300 text-sm leading-relaxed">
+                    ছাত্রীদের জন্য সম্পূর্ণ স্বতন্ত্র ও নিরাপদ প্রাইভেট স্টাডি গ্রুপ। যেখানে পর্দা ও শালীনতা রক্ষা করে নিয়মিত পড়াশোনার সাপোর্ট দেওয়া হয়।
+                  </p>
+                </div>
+
+                <ul className="space-y-2.5 text-xs text-slate-300 border-t border-slate-800 pt-4">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+                    <span>শুধুমাত্র আলিম ২০২৬ নারী শিক্ষার্থীদের জন্য সংরক্ষিত</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+                    <span>বিশেষায়িত স্টাডি রুটিন ও এক্সক্লুসিভ নোটস</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 size={15} className="text-emerald-400 shrink-0" />
+                    <span>নিরাপদ পরিবেশে পড়ালেখা সংক্রান্ত প্রশ্নের উত্তর</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="pt-6">
+                <a
+                  href="https://chat.whatsapp.com/Ba9BCwyADzbKvrDiAfro3D"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-full py-4 rounded-2xl bg-[#25D366] hover:bg-[#20ba5a] text-black font-black text-base shadow-xl shadow-green-500/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2.5"
+                >
+                  <MessageCircle size={22} className="fill-black text-[#25D366]" />
+                  <span>মেয়েদের গ্রুপে যোগ দিন</span>
+                </a>
+              </div>
+            </div>
+
+          </div>
+
+          <div className="mt-8 text-center">
+            <p className="text-xs text-slate-500 font-medium">
+              🔒 গ্রুপে যুক্ত হওয়ার পর প্রতিটি সদস্যকে ভেরিফাই করা হয়। কোনো প্রকার অপ্রাসঙ্গিক মেসেজ বা লিংক শেয়ার সম্পূর্ণ নিষিদ্ধ।
+            </p>
+          </div>
+
+        </div>
+      </section>
+
+      {/* 6. INTERACTIVE FAQ ACCORDION (সাধারণ জিজ্ঞাসা) */}
+      <section id="faq" className="py-16 sm:py-24 relative">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="text-center space-y-3 mb-12">
@@ -660,8 +824,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 6. SUPPORT & PRIVATE GUIDELINE (সাপোর্ট — REFINED ONYX-GOLD GLASS THEME) */}
-      <section id="support" className="py-16 sm:py-24 relative">
+      {/* 7. SUPPORT & CONTACT (সাপোর্ট) */}
+      <section id="support" className="py-16 sm:py-24 bg-[#080c14] border-t border-amber-500/15 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
           <div className="grid lg:grid-cols-12 gap-10 items-center">
@@ -679,8 +843,8 @@ export default function HomePage() {
               </h2>
 
               <p className="text-slate-300 leading-relaxed text-base">
-                এলিট প্রিপারেশনের সাথে যুক্ত শিক্ষার্থীদের জন্য রয়েছে সার্বক্ষণিক প্রাইভেট হোয়াটসঅ্যাপ গ্রুপ। 
-                যেখানে পড়ালেখা সংক্রান্ত যেকোনো জটিলতা, আরবী এবারতের তারকীব, ফিকহী মাসআলার ব্যাখ্যা কিংবা সাজেশন রিভিশনে সরাসরি সাপোর্ট দেওয়া হয়।
+                এলিট প্রিপারেশনের সাথে যুক্ত শিক্ষার্থীদের জন্য রয়েছে সার্বক্ষণিক প্রাইভেট সাপোর্ট। 
+                পড়ালেখা সংক্রান্ত যেকোনো জটিলতা, আরবী এবারতের তারকীব, ফিকহী মাসআলার ব্যাখ্যা কিংবা সাজেশন রিভিশনে সরাসরি সাপোর্ট দেওয়া হয়।
               </p>
 
               <div className="space-y-3 pt-2">
@@ -698,7 +862,7 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Right Contact Card — Cohesive Onyx Glass Theme with Green WhatsApp Action */}
+            {/* Right Contact Card */}
             <div className="lg:col-span-6">
               <div className="p-8 sm:p-10 rounded-3xl bg-slate-900/80 backdrop-blur-xl border border-amber-500/30 shadow-2xl relative overflow-hidden text-center space-y-6">
                 <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 via-yellow-300 to-amber-500" />
@@ -709,7 +873,7 @@ export default function HomePage() {
 
                 <div className="space-y-2">
                   <h3 className="text-xl sm:text-2xl font-black text-white">
-                    প্রাইভেট গ্রুপে যুক্ত হতে যোগাযোগ করুন
+                    সরাসরি যোগাযোগ করুন
                   </h3>
                   <p className="text-sm text-slate-400">
                     আলিম ২০২৬-এর সর্বোচ্চ কমন সাজেশন ও সাপোর্টের জন্য সরাসরি হোয়াটসঅ্যাপে মেসেজ দিন
@@ -740,7 +904,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 7. FOOTER (ফুটার) */}
+      {/* 8. FOOTER (ফুটার) */}
       <footer id="contact" className="py-12 bg-[#080b12] border-t border-slate-900 text-slate-400 text-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
@@ -774,15 +938,27 @@ export default function HomePage() {
               </ul>
             </div>
 
-            {/* Contact Info */}
+            {/* WhatsApp Groups Links */}
             <div className="md:col-span-4 space-y-3">
-              <h4 className="text-xs font-bold text-white uppercase tracking-wider">যোগাযোগ ও সাপোর্ট</h4>
-              <p className="text-xs text-slate-400">
-                হোয়াটসঅ্যাপ সাপোর্ট: <span className="text-amber-400 font-bold"> 01618-788802</span>
-              </p>
-              <p className="text-xs text-slate-500">
-                প্রাইভেট সাপোর্ট গ্রুপে যুক্ত হতে মেসেজ দিন।
-              </p>
+              <h4 className="text-xs font-bold text-white uppercase tracking-wider">প্রাইভেট স্টাডি গ্রুপ</h4>
+              <div className="space-y-2 text-xs">
+                <a
+                  href="https://chat.whatsapp.com/B8fQAmlWEeg96bNsnFHjiM"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block text-amber-400 hover:underline"
+                >
+                  👦 ছেলেদের হোয়াটসঅ্যাপ গ্রুপ লিংক →
+                </a>
+                <a
+                  href="https://chat.whatsapp.com/Ba9BCwyADzbKvrDiAfro3D"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="block text-emerald-400 hover:underline"
+                >
+                  🧕 মেয়েদের হোয়াটসঅ্যাপ গ্রুপ লিংক →
+                </a>
+              </div>
             </div>
           </div>
 
