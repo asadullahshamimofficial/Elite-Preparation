@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage';
 import FiqhApp from './pages/FiqhApp';
 import BalaghatPage from './pages/BalaghatPage';
 import AdminPanel from './pages/AdminPanel';
+import StudentProfile from './pages/StudentProfile';
 
 export default function App() {
   return (
@@ -16,6 +17,24 @@ export default function App() {
         <Routes>
           {/* Public Landing Page */}
           <Route path="/" element={<HomePage />} />
+
+          {/* Student Profile & Dashboard */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <StudentProfile />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <StudentProfile />
+              </ProtectedRoute>
+            }
+          />
 
           {/* Protected Study Series Routes */}
           <Route

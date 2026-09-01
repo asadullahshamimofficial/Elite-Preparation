@@ -286,14 +286,15 @@ export default function HomePage() {
             <div className="hidden sm:flex items-center gap-3">
               {isAuthenticated ? (
                 <div className="flex items-center gap-2.5 bg-slate-900/90 border border-slate-800 p-1.5 pl-3 rounded-2xl">
-                  <div className="flex flex-col text-left">
-                    <span className="text-xs font-bold text-white leading-tight">
-                      {user?.name || 'শিক্ষার্থী'}
+                  <Link to="/profile" className="flex flex-col text-left hover:opacity-80 transition-opacity">
+                    <span className="text-xs font-bold text-white leading-tight flex items-center gap-1">
+                      <span>{user?.name || 'শিক্ষার্থী'}</span>
+                      <span className="text-[10px] bg-amber-500/20 text-amber-400 px-1.5 py-0.2 rounded">প্রোফাইল</span>
                     </span>
                     <span className="text-[10px] text-amber-400 font-mono">
                       {user?.phone || user?.email || (isAdmin ? 'এডমিন' : 'লগইনকৃত')}
                     </span>
-                  </div>
+                  </Link>
 
                   {isAdmin && (
                     <Link
