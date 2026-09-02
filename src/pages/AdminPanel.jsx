@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { questions as defaultFiqhQuestions } from '../data/fiqhData';
 import { balaghatQuestions as defaultBalaghatQuestions } from '../data/balaghatData';
+import { getAllStudents, getLoginLogs, getPageViewLogs } from '../services/firebase';
 import {
   ShieldCheck,
   BookOpen,
@@ -20,14 +21,19 @@ import {
   Save,
   X,
   FileText,
-  AlertCircle
+  AlertCircle,
+  BarChart2,
+  Clock,
+  Activity,
+  RefreshCw,
+  Smartphone
 } from 'lucide-react';
 
 export default function AdminPanel() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState('questions'); // 'questions' | 'students'
+  const [activeTab, setActiveTab] = useState('questions'); // 'questions' | 'students' | 'analytics'
   const [selectedSubject, setSelectedSubject] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -42,19 +48,40 @@ export default function AdminPanel() {
     return saved ? JSON.parse(saved) : defaultBalaghatQuestions;
   });
 
-  // Students list from LocalStorage
-  const [students, setStudents] = useState(() => {
-    try {
-      const saved = localStorage.getItem('elite_registered_students');
-      return saved ? JSON.parse(saved) : [
-        { id: '1', name: 'মুহাম্মদ আব্দুল্লাহ', phone: '01711-223344', madrasah: 'ঢাকা আলিয়া মাদরাসা', role: 'user', joinedAt: '2026-08-25T10:00:00.000Z' },
-        { id: '2', name: 'আহমদ হাসান', email: 'ahmad@gmail.com', phone: '01822-334455', madrasah: 'ছারছীনা দারুসসুন্নাত আলিয়া মাদরাসা', role: 'user', joinedAt: '2026-08-28T14:30:00.000Z' },
-        { id: '3', name: 'ফাতিমা আক্তার', email: 'fatima@gmail.com', phone: '01633-445566', madrasah: 'তা\'মীরুল মিল্লাত কামিল মাদরাসা', role: 'user', joinedAt: '2026-08-30T09:15:00.000Z' }
-      ];
-    } catch {
-      return [];
+  // Students list — loaded from Firestore
+  const [students, setStudents] = useState([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
+
+  // Analytics data
+  const [loginLogs, setLoginLogs] = useState([]);
+  const [pageViewLogs, setPageViewLogs] = useState([]);
+  const [analyticsLoading, setAnalyticsLoading] = useState(false);
+
+  // Load students when tab opens
+  useEffect(() => {
+    if (activeTab === 'students' && students.length === 0) {
+      setStudentsLoading(true);
+      getAllStudents().then(list => {
+        setStudents(list);
+        setStudentsLoading(false);
+      });
     }
-  });
+  }, [activeTab]);
+
+  // Load analytics when tab opens
+  useEffect(() => {
+    if (activeTab === 'analytics') {
+      loadAnalytics();
+    }
+  }, [activeTab]);
+
+  const loadAnalytics = async () => {
+    setAnalyticsLoading(true);
+    const [logs, views] = await Promise.all([getLoginLogs(), getPageViewLogs()]);
+    setLoginLogs(logs);
+    setPageViewLogs(views);
+    setAnalyticsLoading(false);
+  };
 
   // Modal State for adding/editing questions
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -330,6 +357,18 @@ export default function AdminPanel() {
               <Users size={15} />
               <span>শিক্ষার্থী তালিকা ({students.length})</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all ${
+                activeTab === 'analytics'
+                  ? 'bg-amber-500 text-black shadow-md'
+                  : 'bg-slate-900 text-slate-300 hover:text-white'
+              }`}
+            >
+              <BarChart2 size={15} />
+              <span>Analytics</span>
+            </button>
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -454,43 +493,198 @@ export default function AdminPanel() {
             <div className="flex items-center justify-between border-b border-slate-800 pb-3">
               <div>
                 <h3 className="font-bold text-sm text-white">নিবন্ধিত শিক্ষার্থী তালিকা</h3>
-                <p className="text-xs text-slate-400">স্টাডি সিরিজে প্রবেশকৃত শিক্ষার্থীদের ডাটা</p>
+                <p className="text-xs text-slate-400">Firebase থেকে লোড হওয়া সকল নিবন্ধিত শিক্ষার্থী</p>
               </div>
               <span className="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 text-xs font-bold">
                 মোট: {students.length} জন
               </span>
             </div>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="text-slate-400 border-b border-slate-800">
-                    <th className="pb-3 font-semibold">নাম</th>
-                    <th className="pb-3 font-semibold">মোবাইল / ইমেইল</th>
-                    <th className="pb-3 font-semibold">মাদরাসা</th>
-                    <th className="pb-3 font-semibold">ভুমিকা</th>
-                    <th className="pb-3 font-semibold">যোগদানের তারিখ</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60">
-                  {students.map((st, i) => (
-                    <tr key={st.id || i} className="hover:bg-slate-800/30">
-                      <td className="py-3 font-bold text-white">{st.name}</td>
-                      <td className="py-3 font-mono text-amber-400">{st.phone || st.email || 'N/A'}</td>
-                      <td className="py-3 text-slate-300">{st.madrasah || 'মাদরাসা শিক্ষার্থী'}</td>
-                      <td className="py-3">
-                        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300">
-                          {st.role === 'admin' ? 'এডমিন' : 'শিক্ষার্থী'}
-                        </span>
-                      </td>
-                      <td className="py-3 text-slate-400">
-                        {st.joinedAt ? new Date(st.joinedAt).toLocaleDateString('bn-BD') : 'আজ'}
-                      </td>
+            {studentsLoading ? (
+              <div className="text-center py-8 text-slate-400 text-sm">লোড হচ্ছে...</div>
+            ) : students.length === 0 ? (
+              <div className="text-center py-8 text-slate-500 text-sm">এখনো কোনো শিক্ষার্থী নিবন্ধিত হয়নি।</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="text-slate-400 border-b border-slate-800">
+                      <th className="pb-3 font-semibold pr-4">নাম</th>
+                      <th className="pb-3 font-semibold pr-4">ইমেইল</th>
+                      <th className="pb-3 font-semibold pr-4">মোবাইল</th>
+                      <th className="pb-3 font-semibold pr-4">মাদরাসা</th>
+                      <th className="pb-3 font-semibold">রেজিস্ট্রেশন তারিখ</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800/60">
+                    {students.map((st, i) => (
+                      <tr key={st.uid || i} className="hover:bg-slate-800/30">
+                        <td className="py-3 font-bold text-white pr-4">{st.name || 'N/A'}</td>
+                        <td className="py-3 text-amber-400 pr-4">{st.email || '—'}</td>
+                        <td className="py-3 font-mono text-slate-300 pr-4">{st.mobile || '—'}</td>
+                        <td className="py-3 text-slate-300 pr-4">{st.madrasah || '—'}</td>
+                        <td className="py-3 text-slate-400">
+                          {st.createdAt ? new Date(st.createdAt).toLocaleDateString('bn-BD') : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Tab 3: Analytics */}
+        {activeTab === 'analytics' && (
+          <div className="space-y-6">
+
+            {/* Analytics Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-base text-white flex items-center gap-2">
+                  <BarChart2 size={18} className="text-amber-400" />
+                  ব্যবহারকারী Analytics
+                </h3>
+                <p className="text-xs text-slate-400 mt-1">Firebase Firestore থেকে রিয়েলটাইম ডাটা</p>
+              </div>
+              <button
+                onClick={loadAnalytics}
+                disabled={analyticsLoading}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700 transition-colors disabled:opacity-50"
+              >
+                <RefreshCw size={14} className={analyticsLoading ? 'animate-spin' : ''} />
+                রিফ্রেশ
+              </button>
             </div>
+
+            {analyticsLoading ? (
+              <div className="text-center py-12 text-slate-400">ডাটা লোড হচ্ছে...</div>
+            ) : (
+              <>
+                {/* Summary Cards */}
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                  <div className="p-4 rounded-2xl bg-[#0e1424] border border-cyan-500/20">
+                    <p className="text-xs text-slate-400">মোট লগইন</p>
+                    <p className="text-2xl font-black text-cyan-400 mt-1">{loginLogs.length}</p>
+                    <p className="text-[11px] text-slate-500">সর্বশেষ ২০০টি</p>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-[#0e1424] border border-purple-500/20">
+                    <p className="text-xs text-slate-400">মোট পেজ ভিজিট</p>
+                    <p className="text-2xl font-black text-purple-400 mt-1">{pageViewLogs.length}</p>
+                    <p className="text-[11px] text-slate-500">সর্বশেষ ৫০০টি</p>
+                  </div>
+                  <div className="p-4 rounded-2xl bg-[#0e1424] border border-emerald-500/20 col-span-2 sm:col-span-1">
+                    <p className="text-xs text-slate-400">মোট সময় (মিনিট)</p>
+                    <p className="text-2xl font-black text-emerald-400 mt-1">
+                      {Math.round(pageViewLogs.reduce((acc, v) => acc + (v.durationSeconds || 0), 0) / 60)}
+                    </p>
+                    <p className="text-[11px] text-slate-500">সকল শিক্ষার্থীর সম্মিলিত</p>
+                  </div>
+                </div>
+
+                {/* Page Visit Stats */}
+                <div className="p-4 rounded-2xl bg-[#0e1424] border border-slate-800 space-y-3">
+                  <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                    <Activity size={15} className="text-purple-400" />
+                    পেজ ভিজিট পরিসংখ্যান
+                  </h4>
+                  {(() => {
+                    const pageStats = {};
+                    pageViewLogs.forEach(v => {
+                      if (!pageStats[v.page]) pageStats[v.page] = { visits: 0, totalSec: 0 };
+                      pageStats[v.page].visits++;
+                      pageStats[v.page].totalSec += (v.durationSeconds || 0);
+                    });
+                    const sorted = Object.entries(pageStats).sort((a, b) => b[1].visits - a[1].visits);
+                    if (sorted.length === 0) return <p className="text-xs text-slate-500">এখনো কোনো পেজ ভিজিট রেকর্ড নেই।</p>;
+                    const maxVisits = sorted[0][1].visits;
+                    return sorted.map(([page, stat]) => (
+                      <div key={page} className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="font-semibold text-slate-200">{page}</span>
+                          <span className="text-slate-400">{stat.visits} ভিজিট · {Math.round(stat.totalSec / 60)} মিনিট</span>
+                        </div>
+                        <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-purple-500 to-cyan-500 rounded-full"
+                            style={{ width: `${(stat.visits / maxVisits) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+
+                {/* Login History */}
+                <div className="p-4 rounded-2xl bg-[#0e1424] border border-slate-800 space-y-3">
+                  <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                    <Clock size={15} className="text-cyan-400" />
+                    সাম্প্রতিক লগইন হিস্টোরি
+                  </h4>
+                  {loginLogs.length === 0 ? (
+                    <p className="text-xs text-slate-500">এখনো কোনো লগইন রেকর্ড নেই।</p>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead>
+                          <tr className="text-slate-400 border-b border-slate-800">
+                            <th className="pb-2 font-semibold pr-4">নাম</th>
+                            <th className="pb-2 font-semibold pr-4">ইমেইল</th>
+                            <th className="pb-2 font-semibold">সময়</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/40">
+                          {loginLogs.slice(0, 50).map((log) => (
+                            <tr key={log.id} className="hover:bg-slate-800/20">
+                              <td className="py-2 font-semibold text-white pr-4">{log.name || '—'}</td>
+                              <td className="py-2 text-amber-400 pr-4">{log.email || '—'}</td>
+                              <td className="py-2 text-slate-400">
+                                {log.loginAt?.toDate
+                                  ? log.loginAt.toDate().toLocaleString('bn-BD')
+                                  : '—'}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+
+                {/* Per-user page time breakdown */}
+                <div className="p-4 rounded-2xl bg-[#0e1424] border border-slate-800 space-y-3">
+                  <h4 className="font-bold text-sm text-white flex items-center gap-2">
+                    <Smartphone size={15} className="text-emerald-400" />
+                    শিক্ষার্থী অনুযায়ী সময় বিশ্লেষণ
+                  </h4>
+                  {(() => {
+                    const userStats = {};
+                    pageViewLogs.forEach(v => {
+                      const key = v.uid;
+                      if (!userStats[key]) userStats[key] = { name: v.name || v.email || key, totalSec: 0, pages: {} };
+                      userStats[key].totalSec += (v.durationSeconds || 0);
+                      userStats[key].pages[v.page] = (userStats[key].pages[v.page] || 0) + (v.durationSeconds || 0);
+                    });
+                    const sorted = Object.values(userStats).sort((a, b) => b.totalSec - a.totalSec);
+                    if (sorted.length === 0) return <p className="text-xs text-slate-500">এখনো কোনো ডাটা নেই।</p>;
+                    return sorted.slice(0, 20).map((u, i) => (
+                      <div key={i} className="flex items-start justify-between gap-4 py-2 border-b border-slate-800/40 last:border-0">
+                        <div>
+                          <p className="font-semibold text-white text-xs">{u.name}</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">
+                            {Object.entries(u.pages).map(([pg, sec]) => `${pg}: ${Math.round(sec/60)}মি`).join(' · ')}
+                          </p>
+                        </div>
+                        <span className="shrink-0 text-emerald-400 font-bold text-xs">
+                          {Math.round(u.totalSec / 60)} মিনিট
+                        </span>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </>
+            )}
           </div>
         )}
 

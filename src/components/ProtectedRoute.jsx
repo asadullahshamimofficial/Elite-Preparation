@@ -4,7 +4,7 @@ import { useLocation, Link } from 'react-router-dom';
 import { Lock, LogIn, ArrowLeft, ShieldCheck, KeyRound, AlertCircle } from 'lucide-react';
 
 export default function ProtectedRoute({ children, requireAdmin = false }) {
-  const { isAuthenticated, isAdmin, openAuthModal, loginAsAdmin } = useAuth();
+  const { isAuthenticated, isAdmin, openAuthModal, loginAsAdmin, authLoading } = useAuth();
   const location = useLocation();
 
   // Admin passcode login state
@@ -13,11 +13,13 @@ export default function ProtectedRoute({ children, requireAdmin = false }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
+    // Wait until Firebase has resolved the auth state before acting
+    if (authLoading) return;
     // Only open the public auth modal for regular study series, NOT for /admin
     if (!requireAdmin && !isAuthenticated) {
       openAuthModal(location.pathname);
     }
-  }, [isAuthenticated, requireAdmin, location.pathname]);
+  }, [authLoading, isAuthenticated, requireAdmin]);
 
   // Handle Admin Passcode Login directly on /admin
   const handleAdminPasscodeSubmit = (e) => {
@@ -100,6 +102,15 @@ export default function ProtectedRoute({ children, requireAdmin = false }) {
           </div>
 
         </div>
+      </div>
+    );
+  }
+
+  // If auth is still loading (Firebase resolving session), show spinner
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#0b0f17] flex items-center justify-center">
+        <div className="text-slate-400 text-sm animate-pulse">লোড হচ্ছে...</div>
       </div>
     );
   }

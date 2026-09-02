@@ -6,8 +6,10 @@ import BookmarkDrawer from '../components/BookmarkDrawer';
 import BalaghatQaCard from '../components/BalaghatQaCard';
 import { balaghatChapters, balaghatQuestions, balaghatQuizData } from '../data/balaghatData';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import usePageTracking from '../hooks/usePageTracking';
 
 export default function BalaghatPage() {
+  usePageTracking('বালাগাত ও মানতিক');
   const [activeChapterId, setActiveChapterId] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [theme, setTheme] = useState('dark');
@@ -155,7 +157,7 @@ export default function BalaghatPage() {
               q={q}
               isBookmarked={bookmarkedIds.includes(q.id)}
               toggleBookmark={toggleBookmark}
-              defaultOpen={expandAll || idx === 0}
+              defaultOpen={expandAll}
             />
           ))
         )}

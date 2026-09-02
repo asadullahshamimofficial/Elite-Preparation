@@ -6,8 +6,10 @@ import QuizModal from '../components/QuizModal';
 import BookmarkDrawer from '../components/BookmarkDrawer';
 import { chapters, questions, quizData } from '../data/fiqhData';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import usePageTracking from '../hooks/usePageTracking';
 
 export default function FiqhApp() {
+  usePageTracking('ফিকহ ১ম পত্র');
   const [activeChapterId, setActiveChapterId] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [theme, setTheme] = useState('dark');

@@ -5,19 +5,31 @@ import {
   setDoc,
   getDoc,
   collection,
-  getDocs
+  getDocs,
+  addDoc,
+  query,
+  orderBy,
+  limit,
+  serverTimestamp
 } from 'firebase/firestore';
-import { getAuth } from 'firebase/auth';
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  updateProfile
+} from 'firebase/auth';
 
-// Read Firebase Web App Configuration securely from environment variables
+// Firebase Configuration from environment variables
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "",
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "elite-preparation.firebaseapp.com",
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "elite-preparation",
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "elite-preparation.firebasestorage.app",
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || "",
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || ""
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'elite-preparation.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'elite-preparation',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'elite-preparation.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || ''
 };
 
 // Initialize Firebase safely
@@ -32,107 +44,261 @@ try {
     auth = getAuth(app);
   }
 } catch (error) {
-  console.warn("Firebase initialization notice:", error);
+  console.warn('Firebase initialization notice:', error);
 }
 
 export { app, db, auth };
 
-/**
- * Save / Update student profile to Firestore & LocalStorage
- */
-export async function saveStudentProfile(studentId, profileData) {
-  const cleanId = (studentId || profileData.email || 'student_' + Date.now()).replace(/[^a-zA-Z0-9_-]/g, '_');
-  
-  const dataToSave = {
-    ...profileData,
-    id: cleanId,
-    updatedAt: new Date().toISOString()
+// ─────────────────────────────────────────────────────────
+// AUTH: Register new user with Email & Password
+// ─────────────────────────────────────────────────────────
+export async function registerWithEmail({ name, madrasah, mobile, email, password }) {
+  if (!auth) throw new Error('Firebase Auth is not initialized.');
+
+  // 1. Create Firebase Auth user
+  const credential = await createUserWithEmailAndPassword(auth, email, password);
+  const firebaseUser = credential.user;
+
+  // 2. Set displayName (don't block if it fails)
+  try {
+    await updateProfile(firebaseUser, { displayName: name });
+  } catch (e) {
+    console.warn('updateProfile warning:', e);
+  }
+
+  // 3. Save profile to Firestore students collection in the background
+  const profile = {
+    uid: firebaseUser.uid,
+    id: firebaseUser.uid,
+    name,
+    email,
+    mobile: mobile || '',
+    phone: mobile || '',
+    madrasah: madrasah || '',
+    role: 'user',
+    authProvider: 'email_password',
+    createdAt: new Date().toISOString()
   };
 
-  // 1. Save to LocalStorage immediately for instant UX
+  // Cache to localStorage for instant UI response
   try {
-    const existing = JSON.parse(localStorage.getItem('elite_auth_user') || '{}');
-    const merged = { ...existing, ...dataToSave };
-    localStorage.setItem('elite_auth_user', JSON.stringify(merged));
-
-    // Update registered students list locally
-    const studentsList = JSON.parse(localStorage.getItem('elite_registered_students') || '[]');
-    const index = studentsList.findIndex(s => s.id === cleanId || s.email === profileData.email);
-    if (index >= 0) {
-      studentsList[index] = { ...studentsList[index], ...dataToSave };
-    } else {
-      studentsList.push(dataToSave);
-    }
-    localStorage.setItem('elite_registered_students', JSON.stringify(studentsList));
-  } catch (err) {
-    console.error("Local storage error:", err);
+    localStorage.setItem('elite_auth_user', JSON.stringify(profile));
+  } catch (e) {
+    console.warn('LocalStorage cache error:', e);
   }
 
-  // 2. Save directly to Firebase Firestore Cloud Database
   if (db) {
-    try {
-      const userRef = doc(db, 'students', cleanId);
-      await setDoc(userRef, dataToSave, { merge: true });
-      return { success: true, source: 'firebase' };
-    } catch (err) {
-      console.warn("Firestore cloud sync notice:", err);
-    }
+    // Non-blocking firestore write
+    setDoc(doc(db, 'students', firebaseUser.uid), profile, { merge: true }).catch((err) => {
+      console.warn('Firestore students write warning (check security rules):', err);
+    });
   }
 
-  return { success: true, source: 'local' };
+  return profile;
 }
 
-/**
- * Get student profile from Firestore or LocalStorage
- */
-export async function getStudentProfile(studentId) {
-  const cleanId = (studentId || '').replace(/[^a-zA-Z0-9_-]/g, '_');
-  
-  if (db && cleanId) {
-    try {
-      const userRef = doc(db, 'students', cleanId);
-      const snap = await getDoc(userRef);
-      if (snap.exists()) {
-        const firestoreData = snap.data();
-        localStorage.setItem('elite_auth_user', JSON.stringify(firestoreData));
-        return firestoreData;
+// ─────────────────────────────────────────────────────────
+// AUTH: Login with Email & Password
+// ─────────────────────────────────────────────────────────
+export async function loginWithEmail(email, password) {
+  if (!auth) throw new Error('Firebase Auth is not initialized.');
+
+  const credential = await signInWithEmailAndPassword(auth, email, password);
+  const firebaseUser = credential.user;
+
+  // Read any cached profile or build basic object
+  let profile = null;
+  try {
+    const cached = localStorage.getItem('elite_auth_user');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed.uid === firebaseUser.uid || parsed.email === email) {
+        profile = parsed;
       }
-    } catch (err) {
-      console.warn("Firestore fetch error:", err);
     }
+  } catch (e) {
+    console.warn('Cached profile parse error:', e);
   }
 
+  const userObj = {
+    uid: firebaseUser.uid,
+    id: firebaseUser.uid,
+    name: profile?.name || firebaseUser.displayName || email.split('@')[0],
+    email,
+    mobile: profile?.mobile || profile?.phone || '',
+    phone: profile?.phone || profile?.mobile || '',
+    madrasah: profile?.madrasah || '',
+    role: profile?.role || 'user',
+    authProvider: 'email_password'
+  };
+
   try {
-    const user = JSON.parse(localStorage.getItem('elite_auth_user') || 'null');
-    return user;
-  } catch {
-    return null;
+    localStorage.setItem('elite_auth_user', JSON.stringify(userObj));
+  } catch (e) {
+    console.warn('LocalStorage save error:', e);
   }
+
+  // Background fetch latest profile & background log login event
+  if (db) {
+    getDoc(doc(db, 'students', firebaseUser.uid))
+      .then((snap) => {
+        if (snap.exists()) {
+          const remoteData = snap.data();
+          const merged = { ...userObj, ...remoteData };
+          localStorage.setItem('elite_auth_user', JSON.stringify(merged));
+        }
+      })
+      .catch(() => {});
+
+    logLoginEvent(firebaseUser.uid, userObj.name, email);
+  }
+
+  return userObj;
 }
 
-/**
- * Fetch all registered students from Firestore for Admin Panel
- */
-export async function getAllStudentsFromFirestore() {
-  if (db) {
-    try {
-      const snapshot = await getDocs(collection(db, 'students'));
-      const list = [];
-      snapshot.forEach(docSnap => {
-        list.push(docSnap.data());
-      });
-      if (list.length > 0) {
-        localStorage.setItem('elite_registered_students', JSON.stringify(list));
-        return list;
-      }
-    } catch (err) {
-      console.warn("Firestore students fetch error:", err);
-    }
-  }
-
+// ─────────────────────────────────────────────────────────
+// AUTH: Logout
+// ─────────────────────────────────────────────────────────
+export async function logoutUser() {
   try {
-    return JSON.parse(localStorage.getItem('elite_registered_students') || '[]');
-  } catch {
+    localStorage.removeItem('elite_auth_user');
+  } catch (e) {
+    console.warn('LocalStorage clear error:', e);
+  }
+  if (auth) await signOut(auth);
+}
+
+// ─────────────────────────────────────────────────────────
+// AUTH: Listen to auth state changes
+// ─────────────────────────────────────────────────────────
+export function subscribeAuthState(callback) {
+  if (!auth) {
+    callback(null);
+    return () => {};
+  }
+  return onAuthStateChanged(auth, callback);
+}
+
+// ─────────────────────────────────────────────────────────
+// ANALYTICS: Log every login event (non-blocking)
+// ─────────────────────────────────────────────────────────
+export function logLoginEvent(uid, name, email) {
+  if (!db) return;
+  addDoc(collection(db, 'loginLogs'), {
+    uid,
+    name: name || '',
+    email: email || '',
+    loginAt: serverTimestamp(),
+    device: navigator.userAgent.slice(0, 120)
+  }).catch((e) => {
+    console.warn('Login log warning:', e);
+  });
+}
+
+// ─────────────────────────────────────────────────────────
+// ANALYTICS: Log page visit with duration (non-blocking)
+// ─────────────────────────────────────────────────────────
+export function logPageView(uid, name, email, page, durationSeconds) {
+  if (!db || !uid) return;
+  addDoc(collection(db, 'pageViews'), {
+    uid,
+    name: name || '',
+    email: email || '',
+    page,
+    visitedAt: serverTimestamp(),
+    durationSeconds: Math.round(durationSeconds)
+  }).catch((e) => {
+    console.warn('Page view log warning:', e);
+  });
+}
+
+// ─────────────────────────────────────────────────────────
+// ADMIN: Fetch all registered students
+// ─────────────────────────────────────────────────────────
+export async function getAllStudents() {
+  if (!db) return [];
+  try {
+    const snap = await getDocs(collection(db, 'students'));
+    return snap.docs.map((d) => d.data());
+  } catch (e) {
+    console.warn('getAllStudents error:', e);
     return [];
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// ADMIN: Fetch login history (latest 200)
+// ─────────────────────────────────────────────────────────
+export async function getLoginLogs() {
+  if (!db) return [];
+  try {
+    const q = query(collection(db, 'loginLogs'), orderBy('loginAt', 'desc'), limit(200));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (e) {
+    console.warn('getLoginLogs error:', e);
+    return [];
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// ADMIN: Fetch page view logs (latest 500)
+// ─────────────────────────────────────────────────────────
+export async function getPageViewLogs() {
+  if (!db) return [];
+  try {
+    const q = query(collection(db, 'pageViews'), orderBy('visitedAt', 'desc'), limit(500));
+    const snap = await getDocs(q);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  } catch (e) {
+    console.warn('getPageViewLogs error:', e);
+    return [];
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// Save / update student profile
+// ─────────────────────────────────────────────────────────
+export async function saveStudentProfile(studentId, profileData) {
+  const dataToSave = { ...profileData, updatedAt: new Date().toISOString() };
+  try {
+    const local = JSON.parse(localStorage.getItem('elite_auth_user') || '{}');
+    localStorage.setItem('elite_auth_user', JSON.stringify({ ...local, ...dataToSave }));
+  } catch (e) {
+    console.warn('Local save warning:', e);
+  }
+
+  if (!db) return { success: true };
+  try {
+    const ref = doc(db, 'students', studentId);
+    await setDoc(ref, dataToSave, { merge: true });
+    return { success: true };
+  } catch (e) {
+    console.warn('saveStudentProfile firestore error:', e);
+    return { success: false };
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// Get a single student profile from Firestore
+// ─────────────────────────────────────────────────────────
+export async function getStudentProfile(studentId) {
+  try {
+    const local = JSON.parse(localStorage.getItem('elite_auth_user') || 'null');
+    if (local && (local.uid === studentId || local.id === studentId)) {
+      return local;
+    }
+  } catch (e) {
+    console.warn('Local profile read error:', e);
+  }
+
+  if (!db || !studentId) return null;
+  try {
+    const snap = await getDoc(doc(db, 'students', studentId));
+    if (snap.exists()) return snap.data();
+    return null;
+  } catch (e) {
+    console.warn('getStudentProfile error:', e);
+    return null;
   }
 }
