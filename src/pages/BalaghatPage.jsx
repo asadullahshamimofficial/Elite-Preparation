@@ -4,7 +4,8 @@ import Header from '../components/Header';
 import QuizModal from '../components/QuizModal';
 import BookmarkDrawer from '../components/BookmarkDrawer';
 import BalaghatQaCard from '../components/BalaghatQaCard';
-import { balaghatChapters, balaghatQuestions, balaghatQuizData } from '../data/balaghatData';
+import { balaghatChapters, balaghatQuestions as localBalaghatQuestions, balaghatQuizData } from '../data/balaghatData';
+import { fetchQuestionsFromFirestore } from '../services/firebase';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import usePageTracking from '../hooks/usePageTracking';
 
@@ -22,6 +23,16 @@ export default function BalaghatPage() {
   const [showBookmarks, setShowBookmarks] = useState(false);
   const [expandAll, setExpandAll] = useState(false);
   const [expandToggleKey, setExpandToggleKey] = useState(0);
+
+  // Firestore-first questions: fetch from cloud, fallback to local
+  const [balaghatQuestions, setBalaghatQuestions] = useState(localBalaghatQuestions);
+  useEffect(() => {
+    fetchQuestionsFromFirestore().then(data => {
+      if (data?.balaghat && data.balaghat.length > 0) {
+        setBalaghatQuestions(data.balaghat);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);

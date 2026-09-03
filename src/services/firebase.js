@@ -39,7 +39,7 @@ let auth = null;
 
 try {
   app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-  db = getFirestore(app);
+  db = getFirestore(app); // uses (default) database
   auth = getAuth(app);
 } catch (error) {
   console.error('Firebase initialization error:', error);
@@ -255,32 +255,58 @@ export async function getPageViewLogs() {
 }
 
 // ─────────────────────────────────────────────────────────
-// Save / update student profile
+// Save / update student profile to Firestore & LocalStorage
 // ─────────────────────────────────────────────────────────
 export async function saveStudentProfile(studentId, profileData) {
-  const dataToSave = { ...profileData, updatedAt: new Date().toISOString() };
+  const cleanId = studentId || profileData?.uid || profileData?.email || 'user_' + Date.now();
+  const dataToSave = {
+    ...profileData,
+    id: cleanId,
+    uid: cleanId,
+    updatedAt: new Date().toISOString()
+  };
+
+  // 1. Instant local update
   try {
     const local = JSON.parse(localStorage.getItem('elite_auth_user') || '{}');
-    localStorage.setItem('elite_auth_user', JSON.stringify({ ...local, ...dataToSave }));
+    const merged = { ...local, ...dataToSave };
+    localStorage.setItem('elite_auth_user', JSON.stringify(merged));
   } catch (e) {
     console.warn('Local save warning:', e);
   }
 
-  if (!db) return { success: true };
-  try {
-    const ref = doc(db, 'students', studentId);
-    await setDoc(ref, dataToSave, { merge: true });
-    return { success: true };
-  } catch (e) {
-    console.warn('saveStudentProfile firestore error:', e);
-    return { success: false };
+  // 2. Direct Firestore persistence
+  if (db && cleanId) {
+    try {
+      const ref = doc(db, 'students', cleanId);
+      await setDoc(ref, dataToSave, { merge: true });
+      return { success: true, firestore: true };
+    } catch (e) {
+      console.warn('saveStudentProfile firestore error:', e);
+      return { success: true, firestore: false, error: e.message };
+    }
   }
+
+  return { success: true, firestore: false };
 }
 
 // ─────────────────────────────────────────────────────────
 // Get a single student profile from Firestore
 // ─────────────────────────────────────────────────────────
 export async function getStudentProfile(studentId) {
+  if (!studentId) return null;
+
+  // Try Firestore first (most up-to-date)
+  if (db) {
+    try {
+      const snap = await getDoc(doc(db, 'students', studentId));
+      if (snap.exists()) return snap.data();
+    } catch (e) {
+      console.warn('getStudentProfile Firestore notice (offline fallback):', e.message);
+    }
+  }
+
+  // Fallback to localStorage if offline
   try {
     const local = JSON.parse(localStorage.getItem('elite_auth_user') || 'null');
     if (local && (local.uid === studentId || local.id === studentId)) {
@@ -290,13 +316,63 @@ export async function getStudentProfile(studentId) {
     console.warn('Local profile read error:', e);
   }
 
-  if (!db || !studentId) return null;
+  return null;
+}
+
+// ─────────────────────────────────────────────────────────
+// CONTENT: Sync all website questions & chapters to Firestore
+// ─────────────────────────────────────────────────────────
+export async function syncAllQuestionsToFirestore(fiqhQuestions, balaghatQuestions) {
+  if (!db) return { success: false, message: 'Firebase DB is not initialized' };
+
   try {
-    const snap = await getDoc(doc(db, 'students', studentId));
-    if (snap.exists()) return snap.data();
-    return null;
-  } catch (e) {
-    console.warn('getStudentProfile error:', e);
+    // 1. Save fiqh questions in batch/document
+    await setDoc(doc(db, 'site_content', 'fiqh'), {
+      subject: 'fiqh',
+      title: 'ফিকহ প্রথম পত্র',
+      updatedAt: new Date().toISOString(),
+      questions: fiqhQuestions
+    }, { merge: true });
+
+    // 2. Save balaghat questions in batch/document
+    await setDoc(doc(db, 'site_content', 'balaghat'), {
+      subject: 'balaghat',
+      title: 'বালাগাত ও মানতিক',
+      updatedAt: new Date().toISOString(),
+      questions: balaghatQuestions
+    }, { merge: true });
+
+    return { success: true, count: fiqhQuestions.length + balaghatQuestions.length };
+  } catch (err) {
+    console.error('syncAllQuestionsToFirestore error:', err);
+    return { success: false, error: err.message };
+  }
+}
+
+// ─────────────────────────────────────────────────────────
+// CONTENT: Fetch questions from Firestore
+// ─────────────────────────────────────────────────────────
+export async function fetchQuestionsFromFirestore() {
+  if (!db) return null;
+
+  try {
+    const [fiqhSnap, balaghatSnap] = await Promise.all([
+      getDoc(doc(db, 'site_content', 'fiqh')),
+      getDoc(doc(db, 'site_content', 'balaghat'))
+    ]);
+
+    const res = {};
+    if (fiqhSnap.exists()) {
+      res.fiqh = fiqhSnap.data().questions;
+    }
+    if (balaghatSnap.exists()) {
+      res.balaghat = balaghatSnap.data().questions;
+    }
+
+    return (res.fiqh || res.balaghat) ? res : null;
+  } catch (err) {
+    console.warn('fetchQuestionsFromFirestore notice:', err);
     return null;
   }
 }
+

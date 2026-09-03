@@ -52,8 +52,9 @@ export default function StudentProfile() {
       const savedBookmarks = JSON.parse(localStorage.getItem('fiqh_bookmarks') || '[]');
       setStats(prev => ({ ...prev, bookmarksCount: savedBookmarks.length }));
 
-      if (user?.id) {
-        getStudentProfile(user.id).then(data => {
+      const profileId = user?.uid || user?.id;
+      if (profileId) {
+        getStudentProfile(profileId).then(data => {
           if (data) {
             setFormData(prev => ({ ...prev, ...data }));
           }
@@ -74,8 +75,12 @@ export default function StudentProfile() {
     setIsLoading(true);
     setSaveSuccess(false);
 
+    const targetId = user?.uid || user?.id || user?.email;
     try {
-      await saveStudentProfile(user?.id || user?.email || 'student_' + Date.now(), formData);
+      await saveStudentProfile(targetId, {
+        ...formData,
+        email: user?.email || formData.email
+      });
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 3500);
     } catch (err) {

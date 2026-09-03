@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { questions as defaultFiqhQuestions } from '../data/fiqhData';
 import { balaghatQuestions as defaultBalaghatQuestions } from '../data/balaghatData';
-import { getAllStudents, getLoginLogs, getPageViewLogs } from '../services/firebase';
+import { getAllStudents, getLoginLogs, getPageViewLogs, syncAllQuestionsToFirestore, fetchQuestionsFromFirestore } from '../services/firebase';
 import {
   ShieldCheck,
   BookOpen,
@@ -26,7 +26,9 @@ import {
   Clock,
   Activity,
   RefreshCw,
-  Smartphone
+  Smartphone,
+  UploadCloud,
+  Database
 } from 'lucide-react';
 
 export default function AdminPanel() {
@@ -36,6 +38,7 @@ export default function AdminPanel() {
   const [activeTab, setActiveTab] = useState('questions'); // 'questions' | 'students' | 'analytics'
   const [selectedSubject, setSelectedSubject] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [isSyncingFirebase, setIsSyncingFirebase] = useState(false);
 
   // Questions State from LocalStorage or default
   const [fiqhList, setFiqhList] = useState(() => {
@@ -222,6 +225,22 @@ export default function AdminPanel() {
     showToast(editingQuestion ? 'প্রশ্নটি সফলভাবে আপডেট হয়েছে' : 'নতুন প্রশ্ন সফলভাবে যুক্ত হয়েছে');
   };
 
+  const handleSyncToFirestore = async () => {
+    setIsSyncingFirebase(true);
+    try {
+      const res = await syncAllQuestionsToFirestore(fiqhList, balaghatList);
+      if (res.success) {
+        showToast('সকল বিষয়ের সমস্ত প্রশ্নপত্র সফলভাবে ফায়ারবেজে ক্লাউড সেভ হয়েছে!');
+      } else {
+        showToast('ফায়ারবেজ সেভ ব্যর্থ: ' + (res.error || res.message));
+      }
+    } catch (err) {
+      showToast('ত্রুটি: ' + err.message);
+    } finally {
+      setIsSyncingFirebase(false);
+    }
+  };
+
   const handleExportJSON = () => {
     const exportData = {
       exportedAt: new Date().toISOString(),
@@ -381,6 +400,16 @@ export default function AdminPanel() {
                 <span>নতুন প্রশ্ন যোগ করুন</span>
               </button>
             )}
+
+            <button
+              onClick={handleSyncToFirestore}
+              disabled={isSyncingFirebase}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold bg-blue-600 text-white hover:bg-blue-500 disabled:opacity-60 disabled:cursor-wait transition-colors flex items-center gap-1.5 border border-blue-500"
+              title="সমস্ত প্রশ্ন ফায়ারবেজ ক্লাউডে সংরক্ষণ করুন"
+            >
+              {isSyncingFirebase ? <RefreshCw size={15} className="animate-spin" /> : <UploadCloud size={15} />}
+              <span className="hidden sm:inline">{isSyncingFirebase ? 'সিঙ্ক হচ্ছে...' : 'ক্লাউড সিঙ্ক'}</span>
+            </button>
 
             <button
               onClick={handleExportJSON}

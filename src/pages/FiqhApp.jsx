@@ -4,7 +4,8 @@ import Header from '../components/Header';
 import QaCard from '../components/QaCard';
 import QuizModal from '../components/QuizModal';
 import BookmarkDrawer from '../components/BookmarkDrawer';
-import { chapters, questions, quizData } from '../data/fiqhData';
+import { chapters, questions as localQuestions, quizData } from '../data/fiqhData';
+import { fetchQuestionsFromFirestore } from '../services/firebase';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import usePageTracking from '../hooks/usePageTracking';
 
@@ -22,6 +23,16 @@ export default function FiqhApp() {
   const [showBookmarks, setShowBookmarks] = useState(false);
   const [expandAll, setExpandAll] = useState(false);
   const [expandToggleKey, setExpandToggleKey] = useState(0);
+
+  // Firestore-first questions: fetch from cloud, fallback to local
+  const [questions, setQuestions] = useState(localQuestions);
+  useEffect(() => {
+    fetchQuestionsFromFirestore().then(data => {
+      if (data?.fiqh && data.fiqh.length > 0) {
+        setQuestions(data.fiqh);
+      }
+    });
+  }, []);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);

@@ -8,6 +8,7 @@ import FiqhApp from './pages/FiqhApp';
 import BalaghatPage from './pages/BalaghatPage';
 import AdminPanel from './pages/AdminPanel';
 import StudentProfile from './pages/StudentProfile';
+import NotFoundPage from './pages/NotFoundPage';
 
 export default function App() {
   return (
@@ -81,6 +82,9 @@ export default function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* 404 — Catch all unknown routes */}
+          <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </AuthProvider>
     </BrowserRouter>
