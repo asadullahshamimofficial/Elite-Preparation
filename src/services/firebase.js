@@ -21,30 +21,28 @@ import {
   updateProfile
 } from 'firebase/auth';
 
-// Firebase Configuration from environment variables
+// Firebase Configuration with environment variables & robust production fallbacks
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || '',
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'elite-preparation.firebaseapp.com',
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'elite-preparation',
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'elite-preparation.firebasestorage.app',
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '',
-  appId: import.meta.env.VITE_FIREBASE_APP_ID || '',
-  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || ''
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyAsbXWjO1PeTyEOUJjBvS-j34AhTQWR-00",
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "elite-preparation.firebaseapp.com",
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "elite-preparation",
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "elite-preparation.firebasestorage.app",
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "910743738250",
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:910743738250:web:a1f4aed80ef6573ea05a73",
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-JHR9G5PYKC"
 };
 
-// Initialize Firebase safely
+// Initialize Firebase
 let app = null;
 let db = null;
 let auth = null;
 
 try {
-  if (firebaseConfig.apiKey) {
-    app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-    db = getFirestore(app);
-    auth = getAuth(app);
-  }
+  app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
+  db = getFirestore(app);
+  auth = getAuth(app);
 } catch (error) {
-  console.warn('Firebase initialization notice:', error);
+  console.error('Firebase initialization error:', error);
 }
 
 export { app, db, auth };

@@ -45,19 +45,11 @@ const BrandLogo = ({ size = 44 }) => (
       height: size,
       background: 'radial-gradient(circle at 35% 35%, #ffffff 0%, #fff7db 45%, #ffd466 75%, #d4a017 100%)',
       border: '2px solid #ffffff',
+      padding: '7px',
       boxShadow: '0 0 20px rgba(212, 160, 23, 0.45)'
     }}
   >
-    <svg viewBox="0 0 100 100" className="w-[70%] h-[70%]" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path
-        d="M 50 15 C 69.33 15 85 30.67 85 50 C 85 64.5 76 77 63 82.5 C 60 83.8 56.5 81.5 56.5 78 C 56.5 75.5 58 73.5 60.5 72.3 C 71 67.5 77 58 77 50 C 77 35.1 64.9 23 50 23 C 35.1 23 23 35.1 23 50 C 23 64.9 35.1 77 50 77 C 52.8 77 55 79.2 55 82 C 55 84.8 52.8 87 50 87 C 29.56 87 13 70.44 13 50 C 13 29.56 29.56 15 50 15 Z"
-        fill="#111111"
-      />
-      <path
-        d="M 37 36 C 37 33.8 38.8 32 41 32 H 52 C 60.8 32 68 39.2 68 48 C 68 56.8 60.8 64 52 64 H 45 V 82 C 45 84.2 43.2 86 41 86 C 38.8 86 37 84.2 37 82 V 36 Z M 45 40 V 56 H 52 C 56.4 56 60 52.4 60 48 C 60 43.6 56.4 40 52 40 H 45 Z"
-        fill="#111111"
-      />
-    </svg>
+    <img src="../../public/logo.png" alt="" />
   </div>
 );
 
