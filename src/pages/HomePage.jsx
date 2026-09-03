@@ -49,7 +49,7 @@ const BrandLogo = ({ size = 44 }) => (
       boxShadow: '0 0 20px rgba(212, 160, 23, 0.45)'
     }}
   >
-    <img src="../../public/logo.png" alt="" />
+    <img src="https://i.ibb.co/NgFtF8WW/logo.png" alt="" />
   </div>
 );
 
